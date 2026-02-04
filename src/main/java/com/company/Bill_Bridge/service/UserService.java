@@ -64,6 +64,11 @@ public class UserService {
         if(!userRepository.existsById(userId)){
             throw new DBException("User with given id " + userId + "doesn't exist") ;
         }
+
+        if(userRepository.findById(userId).get().getRole().equals(Role.CUSTOMER)){
+            throw new DBException("Customer is not allwed to accesss this resource") ;
+        }
+
         Optional<User> user = userRepository.findById(userId);
 
         String businessName = register.getBusinessName();
