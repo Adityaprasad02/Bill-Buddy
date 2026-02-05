@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Register</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            width: 350px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1e40af;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .success {
+            color: green;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Register</h2>
+
+    <div id="message"></div>
+
+    <input type="text" id="username" placeholder="Username">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+
+    <select id="role">
+        <option value="">Select Role</option>
+        <option value="CUSTOMER">Customer</option>
+        <option value="MERCHANT">Merchant</option>
+    </select>
+
+    <select id="authProvider">
+        <option value="LOCAL">Local</option>
+    </select>
+
+    <button onclick="register()">Register</button>
+</div>
+<script>
+    async function register() {
+        const data = {
+            username: document.getElementById("username").value,
+            email: document.getElementById("email").value,
+            password: document.getElementById("password").value,
+            role: document.getElementById("role").value,
+            authProvider: document.getElementById("authProvider").value
+        };
+
+        const messageDiv = document.getElementById("message");
+        messageDiv.innerHTML = "";
+
+        if (!data.username || !data.email || !data.password || !data.role) {
+            messageDiv.innerHTML =
+                `<div class="error">All fields are required</div>`;
+            return;
+        }
+
+        try {
+            const response = await fetch("http://localhost:8000/create", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            // 🔥 ERROR CASE
+            if (!response.ok) {
+                messageDiv.innerHTML =
+                    `<div class="error">${result.error}</div>`;
+                return;
+            }
+
+            // ✅ SUCCESS CASE (SHOW RESULT)
+            messageDiv.innerHTML = `
+                <div class="success">
+                    <h4>Registration Successful 🎉</h4>
+                    <p><b>User ID:</b> ${result.userId}</p>
+                    <p><b>Username:</b> ${result.username}</p>
+                    <p><b>Email:</b> ${result.email}</p>
+                    <p><b>Role:</b> ${result.role}</p>
+                </div>
+            `;
+
+        } catch (err) {
+            messageDiv.innerHTML =
+                `<div class="error">Server not reachable</div>`;
+        }
+    }
+</script>
+
+
+</body>
+</html>
+

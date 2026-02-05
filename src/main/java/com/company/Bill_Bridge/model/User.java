@@ -9,8 +9,13 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.security.AuthProvider;
+import java.util.Collection;
+import java.util.List;
 
 
 @Entity
@@ -19,7 +24,7 @@ import java.security.AuthProvider;
 @Data
 @Table(name = "app_users")
 @Builder
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO)
@@ -50,5 +55,9 @@ public class User {
     private LoginAuthProvider authProvider ;
 
 
-
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        var simpleGrantedAuthority = new SimpleGrantedAuthority("ROLE_" + role.name());
+        return List.of(simpleGrantedAuthority) ;
+    }
 }

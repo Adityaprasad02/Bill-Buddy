@@ -26,9 +26,16 @@ public class PaymentDetails {
     private Bill bill ;
 
     @CreationTimestamp
-    @Column(nullable = false, name = "payment_paidAt")
+    @Column(name = "payment_paidAt")
     private LocalDateTime paidAt ;
 
-    @Column( name="payment_gateway"  , nullable = true )
+    @Column( name="payment_gateway" )
     private String gateway ;
+
+    @Column(name = "gateway_txn_id", unique = true)
+    private String gatewayTxnId;
+
+    @CreationTimestamp
+    @Column(name = "payment_created")
+    private LocalDateTime createdAt;
 }

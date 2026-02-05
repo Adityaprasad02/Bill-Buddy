@@ -17,6 +17,7 @@ import com.company.Bill_Bridge.repository.MerchantRepository;
 import com.company.Bill_Bridge.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -33,6 +34,10 @@ public class UserService {
     @Autowired
     private BillRepository billRepository ;
 
+
+    @Autowired
+    private BCryptPasswordEncoder encoder ;
+
     @Transactional
     public ResponseUserRegistration createUser(RequestUserRegister register) throws DBException {
         String username = register.getUsername();
@@ -48,7 +53,7 @@ public class UserService {
         User newUser = User.builder()
                 .username(username)
                 .email(email)
-                .password(password)
+                .password(encoder.encode(password))
                 .role(role)
                 .authProvider(authProvider).build();
 
