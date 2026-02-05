@@ -2,8 +2,11 @@ package com.company.Bill_Bridge.controller;
 
 
 import com.company.Bill_Bridge.exceptions.DBException;
+import com.company.Bill_Bridge.exceptions.DenialException;
+import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestBillCreation;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestMerchantRegister;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestUserRegister;
+import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseBillGenerated;
 import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseMerchantRegister;
 import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseUserRegistration;
 import com.company.Bill_Bridge.service.UserService;
@@ -15,6 +18,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @RestController
 public class ControllerBill {
@@ -34,8 +39,15 @@ public class ControllerBill {
     }
 
     @PostMapping("/merchant/register/{user_id}")
-    public ResponseEntity<ResponseMerchantRegister> registerMerchant(@PathVariable("user_id") Long userId , @Validated @RequestBody RequestMerchantRegister register) throws DBException {
+    public ResponseEntity<ResponseMerchantRegister> registerMerchant(@PathVariable("user_id") Long userId , @Validated @RequestBody RequestMerchantRegister register) throws DBException, DenialException {
           var result = userService.registerMerchant(userId , register) ;
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/merchant/bill/{merchant_id}/{user_id}")
+    public ResponseEntity<ResponseBillGenerated> generateBill(@PathVariable("merchant_id") UUID merchantId , @PathVariable("user_id") Long userId ,
+                                                              @Validated @RequestBody RequestBillCreation bill) throws DBException, DenialException {
+          ResponseBillGenerated result = userService.generateBill(merchantId , userId , bill) ;
+          return ResponseEntity.ok(result) ;
     }
 }

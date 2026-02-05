@@ -6,7 +6,7 @@ import com.company.Bill_Bridge.model.enums.Role;
 import java.util.UUID;
 
 public record ResponseMerchantRegister(
-        ResponseUserRegistration registration,
+        ResponseUserRegistration userDetails ,
         UUID merchantId ,
         String businessName ,
         MerchantType type ,

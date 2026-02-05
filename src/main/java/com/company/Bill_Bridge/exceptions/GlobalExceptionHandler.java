@@ -16,4 +16,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleDBExceptions(DBException e){
          return new ResponseEntity<>( Map.of( "error" , e.getMessage()) , HttpStatus.BAD_REQUEST) ;
     }
+
+    @ExceptionHandler(DenialException.class)
+    public ResponseEntity<?> handleDenialExceptions(DenialException e){
+        return new ResponseEntity<>( Map.of( "error" , e.getMessage()) , HttpStatus.BAD_REQUEST) ;
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleUnhandled(Exception e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Internal server error"));
+    }
 }
