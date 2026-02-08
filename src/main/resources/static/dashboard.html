@@ -1,37 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
     <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
         .hidden { display: none !important; }
+        h2, h3 { color: #333; }
         .message { 
-            padding: 12px; 
-            margin: 15px 0; 
-            border-radius: 6px; 
-            font-weight: 500;
+            padding: 12px; margin: 15px 0; border-radius: 6px; font-weight: 500;
         }
         .success-msg { background: #e8f5e9; color: #2e7d32; }
         .warning-msg { background: #fff3e0; color: #ef6c00; }
-        form { max-width: 480px; margin: 20px 0; }
-        input { 
-            display: block; 
-            width: 100%; 
-            padding: 10px; 
-            margin: 10px 0; 
-            box-sizing: border-box; 
-            border: 1px solid #ccc; 
-            border-radius: 4px;
+        section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
+        form { max-width: 500px; }
+        label { display: block; margin: 8px 0 4px; font-weight: 600; }
+        input, select { 
+            width: 100%; padding: 10px; margin-bottom: 12px; box-sizing: border-box; 
+            border: 1px solid #ccc; border-radius: 4px; font-size: 1rem;
         }
         button { 
-            padding: 12px 24px; 
-            background: #1976d2; 
-            color: white; 
-            border: none; 
-            border-radius: 4px; 
-            cursor: pointer; 
+            padding: 12px 24px; background: #1976d2; color: white; border: none; 
+            border-radius: 4px; cursor: pointer; margin-right: 10px; font-size: 1rem;
         }
         button:hover { background: #1565c0; }
-        #resultdiv { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; }
+        .send-btn { background: #4caf50; }
+        .send-btn:hover { background: #388e3c; }
+        pre { 
+            background: #f0f8ff; padding: 16px; border: 1px solid #bbdefb; 
+            border-radius: 6px; white-space: pre-wrap; font-family: monospace; overflow-x: auto;
+        }
+        #error { color: #d32f2f; font-weight: bold; min-height: 24px; }
     </style>
 </head>
 <body>
@@ -39,54 +39,108 @@
 <h2>User Dashboard</h2>
 
 <div id="data"></div>
-<p id="error" style="color:red; font-weight:bold;"></p>
+<p id="error"></p>
 
-<!-- Merchant section - will be shown/hidden based on role & status -->
+<!-- Main Merchant-aware section -->
 <div id="merchant-section" class="hidden">
+
+    <!-- Already registered merchant view -->
     <div id="already-merchant" class="hidden">
         <div class="message success-msg">
             You are already registered as a Merchant ✓
         </div>
-        <!-- You can add merchant dashboard link or info here later -->
+        <div class="merchant-display">
+            <h3>Merchant Details</h3>
+            <!-- Data loaded here -->
+        </div>
+
+        <!-- Bill Creation (only visible when merchant exists) -->
+        <section id="bill-section">
+            <h3>Create Bill for Customer</h3>
+            <form id="createBillForm">
+                <label>Customer ID:</label>
+                <input type="number" name="customerId" placeholder="e.g. 123" required min="1" />
+
+                <label>Amount (₹):</label>
+                <input type="number" name="amount" step="0.01" placeholder="500.00" required min="0.01" />
+
+                <label>Title:</label>
+                <input type="text" name="title" placeholder="Monthly Subscription / Order Payment" required />
+
+                <label>Bill Location (optional):</label>
+                <input type="text" name="billLocation" placeholder="Jaipur Store / Online Order #45" />
+
+                <label>Payment Mode:</label>
+                <select name="mode" required>
+                    <option value="">Select Mode</option>
+                    <option value="ONLINE">ONLINE</option>
+                    <option value="CASH">CASH</option>
+                </select>
+
+                <label>Payment Status:</label>
+                <select name="status" required>
+                    <option value="">Select Status</option>
+                    <option value="PAID">PAID</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="DECLINED">DECLINED</option>
+                    <option value="FAILED">FAILED</option>
+                </select>
+
+                <div style="margin-top: 16px;">
+                    <button type="submit">Generate Bill</button>
+                    <button type="button" class="send-btn" onclick="sendBill()">Send (Coming Soon)</button>
+                </div>
+            </form>
+
+            <div id="billResult" style="margin-top: 24px;"></div>
+        </section>
     </div>
 
+    <!-- Not yet merchant → show registration form -->
     <div id="not-merchant" class="hidden">
         <div class="message warning-msg" id="merchant-message">
             Not registered as merchant yet. Please register below.
         </div>
 
         <form id="registermerchant">
-            <input name="businessName"   placeholder="Business Name"        type="text" required />
-            <input name="type"           placeholder="Merchant Type (ONLINE / OFFLINE)" type="text" required />
-            <input name="address"        placeholder="Full Address"         type="text" required />
-            <input name="gstNumber"      placeholder="GST Number"           type="text" required />
+            <label>Business Name:</label>
+            <input name="businessName" placeholder="Business Name" type="text" required />
+
+            <label>Merchant Type:</label>
+            <input name="type" placeholder="ONLINE / OFFLINE / BOTH" type="text" required />
+
+            <label>Address:</label>
+            <input name="address" placeholder="Full Address" type="text" required />
+
+            <label>GST Number:</label>
+            <input name="gstNumber" placeholder="22AAAAA0000A1Z5" type="text" required />
+
             <button type="submit">Register as Merchant</button>
         </form>
 
-        <div id="resultdiv"></div>
+        <div id="resultdiv" style="margin-top: 24px;"></div>
     </div>
 </div>
 
-<button onclick="logout()">Logout</button>
+<button onclick="logout()" style="margin-top: 30px; background: #d32f2f;">Logout</button>
 
 <script>
+    // DOM elements
     const merchantSection   = document.getElementById("merchant-section");
     const alreadyMerchant   = document.getElementById("already-merchant");
     const notMerchant       = document.getElementById("not-merchant");
     const merchantMessage   = document.getElementById("merchant-message");
     const resultDiv         = document.getElementById("resultdiv");
+    const billResult        = document.getElementById("billResult");
+    const merchantDisplay   = document.querySelector(".merchant-display");
 
     async function loadUserAndCheckMerchant() {
         try {
-            // Step 1: Get current user
             const userRes = await fetch("/user/me", { credentials: "include" });
-            if (!userRes.ok) {
-                throw new Error("Session expired or unauthorized");
-            }
+            if (!userRes.ok) throw new Error("Session expired or unauthorized");
 
             const user = await userRes.json();
 
-            // Show basic user info
             document.getElementById("data").innerHTML = `
                 <p><b>ID:</b> ${user.id}</p>
                 <p><b>Username:</b> ${user.username}</p>
@@ -94,29 +148,28 @@
                 <p><b>Role:</b> ${user.role}</p>
             `;
 
-            // Step 2: Role-based logic
             const role = (user.role || "").toUpperCase().trim();
 
             if (role === "CUSTOMER" || role === "USER") {
-                // Normal customer → no merchant features
                 merchantSection.classList.add("hidden");
                 return;
             }
 
-            // If not customer → probably merchant or admin → check merchant status
             merchantSection.classList.remove("hidden");
 
-            // Step 3: Check if user is registered as merchant
-            const merchantRes = await fetch("/merchant/getDetails", { 
-                credentials: "include" 
-            });
+            const merchantRes = await fetch("/merchant/getDetails", { credentials: "include" });
 
             if (merchantRes.ok) {
-                // Already a merchant
+                const merchantData = await merchantRes.json();
                 alreadyMerchant.classList.remove("hidden");
                 notMerchant.classList.add("hidden");
+                billResult.innerHTML = ""; // clear previous
+
+                merchantDisplay.innerHTML = `
+                    <h3>Merchant Details</h3>
+                    <pre>${JSON.stringify(merchantData, null, 2)}</pre>
+                `;
             } else {
-                // Not registered yet
                 const errData = await merchantRes.json().catch(() => ({}));
                 const msg = errData.message || "Merchant profile not found";
 
@@ -127,17 +180,13 @@
 
         } catch (err) {
             document.getElementById("error").innerText = err.message;
-            // Optional: redirect to login after delay
-            setTimeout(() => {
-                window.location.href = "/login.html";
-            }, 2500);
+            setTimeout(() => window.location.href = "/login.html", 2500);
         }
     }
 
-    // Form submit - only active when form is visible
-    document.getElementById("registermerchant").addEventListener("submit", async (e) => {
+    // Merchant Registration
+    document.getElementById("registermerchant")?.addEventListener("submit", async (e) => {
         e.preventDefault();
-
         const form = e.target;
         const formData = new FormData(form);
 
@@ -147,8 +196,6 @@
             address:      formData.get("address")?.trim(),
             gstNumber:    formData.get("gstNumber")?.trim(),
         };
-
-        console.log("Sending merchant data:", data);
 
         if (!data.businessName || !data.type || !data.address || !data.gstNumber) {
             resultDiv.innerHTML = '<p style="color:red;">Please fill all fields</p>';
@@ -165,38 +212,81 @@
                 body: JSON.stringify(data)
             });
 
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.message || `Server error: ${res.status}`);
-            }
+            if (!res.ok) throw new Error((await res.json()).message || `Error ${res.status}`);
 
             const result = await res.json();
             resultDiv.innerHTML = `
                 <h3 style="color:green">Registered Successfully!</h3>
-                <pre style="background:#f0f8ff; padding:12px; border:1px solid #bbdefb; border-radius:6px;">
-${JSON.stringify(result, null, 2)}
-                </pre>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
             `;
 
-            // After success → refresh status (form should disappear)
-            setTimeout(loadUserAndCheckMerchant, 1800);
+            setTimeout(() => {
+                resultDiv.innerHTML = "";
+                loadUserAndCheckMerchant(); // refresh → shows bill section too
+            }, 5000);
 
         } catch (err) {
-            resultDiv.innerHTML = `<p style="color:red; font-weight:bold;">Failed: ${err.message}</p>`;
+            resultDiv.innerHTML = `<p style="color:red;">Failed: ${err.message}</p>`;
             console.error(err);
         }
     });
 
-    // Start on page load
-    loadUserAndCheckMerchant();
+    // Create Bill
+    document.getElementById("createBillForm")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+
+        const customerId = formData.get("customerId")?.trim();
+        const data = {
+            amount:       parseFloat(formData.get("amount")),
+            title:        formData.get("title")?.trim(),
+            billLocation: formData.get("billLocation")?.trim() || null,
+            mode:         formData.get("mode"),
+            status:       formData.get("status")
+        };
+
+        if (!customerId || isNaN(customerId) || !data.amount || !data.title || !data.mode || !data.status) {
+            billResult.innerHTML = '<p style="color:red;">Please fill all required fields correctly</p>';
+            return;
+        }
+
+        billResult.innerHTML = "<p>Generating bill...</p>";
+
+        try {
+            const res = await fetch(`/merchant/bill/${customerId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(data)
+            });
+
+            if (!res.ok) throw new Error((await res.json()).message || `Error ${res.status}`);
+
+            const result = await res.json();
+            billResult.innerHTML = `
+                <h3 style="color:green">Bill Generated Successfully!</h3>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+
+        } catch (err) {
+            billResult.innerHTML = `<p style="color:red;">Failed: ${err.message}</p>`;
+            console.error(err);
+        }
+    });
+
+    function sendBill() {
+        alert("Send functionality (WhatsApp / SMS / Email) coming soon!");
+    }
 
     function logout() {
         fetch("/logout", { credentials: "include" })
             .catch(() => {})
-            .finally(() => {
-                window.location.href = "/login.html";
-            });
+            .finally(() => window.location.href = "/login.html");
     }
+
+    // Load page
+    loadUserAndCheckMerchant();
 </script>
 
 </body>
