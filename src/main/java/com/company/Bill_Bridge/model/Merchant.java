@@ -29,7 +29,7 @@ public class Merchant {
 
     @NotBlank
     @NotNull
-    @Column(name = "business" , nullable = false )
+    @Column(name = "business" , nullable = false , unique = true )
     private String businessName ;
 
     @NotNull

@@ -76,6 +76,7 @@
 
     <select id="authProvider">
         <option value="LOCAL">Local</option>
+        <option value="GOOGLE">Google</option>
     </select>
 
     <button onclick="register()">Register</button>
@@ -100,7 +101,7 @@
         }
 
         try {
-            const response = await fetch("http://localhost:8000/create", {
+            const response = await fetch("http://localhost:8000/user/create", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

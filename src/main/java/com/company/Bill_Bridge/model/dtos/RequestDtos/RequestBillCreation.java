@@ -15,6 +15,7 @@ public record RequestBillCreation(
         @NotNull BigDecimal amount,
         @NotBlank String title ,
          String billLocation ,
-        @NotNull PaymentMode mode
+        @NotNull PaymentMode mode,
+        @NotNull PaymentStatus status
 ) {
 }

@@ -20,8 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
-
 
 @Service
 public class UserService {
@@ -68,16 +66,8 @@ public class UserService {
     }
 
     @Transactional
-    public ResponseMerchantRegister registerMerchant(Long userId , RequestMerchantRegister register) throws DBException, DenialException {
+    public ResponseMerchantRegister registerMerchant(User merchantUser , RequestMerchantRegister register) throws DBException, DenialException {
 
-
-        User user = userRepository.findById(userId)
-                .orElseThrow( () -> new DBException("User with this id " + userId + "doesn't exist") );
-
-
-        if(user.getRole().equals(Role.CUSTOMER)){
-            throw new DenialException("Customer is not allowed to access this resource") ;
-        }
 
 
         String businessName = register.getBusinessName();
@@ -86,7 +76,7 @@ public class UserService {
         String address = register.getAddress();
 
         Merchant merchant = Merchant.builder()
-                .user(user)
+                .user(merchantUser)
                 .businessName(businessName)
                 .type(type)
                 .gstNumber(gst)
@@ -111,23 +101,22 @@ public class UserService {
     }
 
     @Transactional
-    public ResponseBillGenerated generateBill(UUID merchantId, Long userId, RequestBillCreation bill) throws DBException, DenialException {
+    public ResponseBillGenerated generateBill(User merchantUser, Long customerId, RequestBillCreation bill) throws DBException, DenialException {
 
-        User customer = userRepository.findById(userId)
-                .orElseThrow( () -> new DBException("User with this id " + userId + "doesn't exist") );
+        User customer = userRepository.findById(customerId)
+                .orElseThrow( () -> new DBException("User with this id " + customerId + "doesn't exist") );
 
-        if(customer.getRole().equals(Role.MERCHANT)){
-            throw new DenialException(" User id : " + userId + " is Customer") ;
-        }
 
-        Merchant merchant = merchantRepository.findById(merchantId)
-                .orElseThrow( () -> new DBException("Merchant with id : " + merchantId + "doesn't exist")) ;
+        Long merchantUserid = merchantUser.getId();
 
-        if(merchant.getUser().getId().equals(userId)){
+        if(merchantUserid.equals(customerId)){
             throw  new DenialException("Cant generate bill for self as customer") ;
         }
 
-        PaymentStatus paymentStatus = getPaymentStatus(bill);
+        Merchant merchant = merchantRepository.findByUserId(merchantUserid)
+                .orElseThrow( () -> new DBException("MerchantUser with userid : " + merchantUserid + "doesn't exist")) ;
+
+
 
         var billGenerated = Bill.builder()
                 .user(customer)
@@ -135,7 +124,7 @@ public class UserService {
                 .title(bill.title())
                 .amount(bill.amount())
                 .billLocation(bill.billLocation())
-                .status(paymentStatus)
+                .status(bill.status())
                 .mode(bill.mode())
                 .build() ;
 
@@ -154,11 +143,19 @@ public class UserService {
 
     }
 
-    private PaymentStatus getPaymentStatus(RequestBillCreation bill) {
-        if(bill.mode().equals(PaymentMode.CASH)){
-            return PaymentStatus.PAID;
-        }else{
-            return PaymentStatus.PENDING;
-        }
+
+
+    public User getUserDetails(String username) throws DBException {
+
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new DBException("user with username : " + username +
+                "doesn't exist")) ;
+        user.setPassword(null);
+
+        return user ;
+    }
+
+    public Merchant getMerchantDetails(User merchantUser) throws DBException {
+        return merchantRepository.findByUserId(merchantUser.getId()).orElseThrow(() -> new DBException("user with merchant with user id : " + merchantUser.getId() +
+                "doesn't exist"));
     }
 }
