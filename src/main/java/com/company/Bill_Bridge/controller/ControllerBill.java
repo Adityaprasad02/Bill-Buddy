@@ -9,6 +9,7 @@ import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestBillCreation;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestMerchantRegister;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestUserRegister;
 import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseBillGenerated;
+import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseGetMerchantDetails;
 import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseMerchantRegister;
 import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseUserRegistration;
 import com.company.Bill_Bridge.model.enums.Role;
@@ -17,7 +18,6 @@ import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -73,7 +73,7 @@ public class ControllerBill {
     }
 
     @GetMapping("/merchant/getDetails")
-    public ResponseEntity<Merchant> getMerchantDetails(@AuthenticationPrincipal User merchantUser) throws DBException {
+    public ResponseEntity<ResponseGetMerchantDetails> getMerchantDetails(@AuthenticationPrincipal User merchantUser) throws DBException {
           return ResponseEntity.ok(userService.getMerchantDetails(merchantUser)) ;
     }
 

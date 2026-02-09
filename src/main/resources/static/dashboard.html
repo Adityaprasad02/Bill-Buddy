@@ -107,7 +107,11 @@
             <input name="businessName" placeholder="Business Name" type="text" required />
 
             <label>Merchant Type:</label>
-            <input name="type" placeholder="ONLINE / OFFLINE / BOTH" type="text" required />
+            <select name="type" required>
+                <option>SELECT ONLINE/OFFLINE</option>
+                <option value="ONLINE">Online</option>
+                <option value="OFFLINE">Offline</option>
+            </select>
 
             <label>Address:</label>
             <input name="address" placeholder="Full Address" type="text" required />
@@ -263,7 +267,7 @@
 
             if (!res.ok) throw new Error((await res.json()).message || `Error ${res.status}`);
 
-            const result = await res.json();
+            const result = await res.json(); console.log(result) ; 
             billResult.innerHTML = `
                 <h3 style="color:green">Bill Generated Successfully!</h3>
                 <pre>${JSON.stringify(result, null, 2)}</pre>

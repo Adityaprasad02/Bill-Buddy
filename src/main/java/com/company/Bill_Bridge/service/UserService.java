@@ -154,8 +154,14 @@ public class UserService {
         return user ;
     }
 
-    public Merchant getMerchantDetails(User merchantUser) throws DBException {
-        return merchantRepository.findByUserId(merchantUser.getId()).orElseThrow(() -> new DBException("user with merchant with user id : " + merchantUser.getId() +
+    public ResponseGetMerchantDetails getMerchantDetails(User merchantUser) throws DBException {
+        Merchant merchant =  merchantRepository.findByUserId(merchantUser.getId()).orElseThrow(() -> new DBException("user with merchant with user id : " + merchantUser.getId() +
                 "doesn't exist"));
+        return new ResponseGetMerchantDetails(merchant.getMerchantId(),
+                merchant.getBusinessName(),
+                merchant.getType(),
+                merchant.getAddress(),
+                merchant.getGstNumber()
+        );
     }
 }
