@@ -33,6 +33,8 @@
         }
         #error { color: #d32f2f; font-weight: bold; min-height: 24px; }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js" integrity="sha512-iKDtgDyTHjAitUDdLljGhenhPwrbBfqTKWO1mkhSFH3A7blITC9MhYon6SjnMhp4o0rADGw9yAC6EW4t5a4K3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js" integrity="sha512-1QvjE7BtotQjkq8PxLeF6P46gEpBRXuskzIVgjFpekzFVF4yjRgrQvTG1MTOJ3yQgvTteKAcO7DSZI92+u/yZw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
 
@@ -117,7 +119,7 @@
             <input name="address" placeholder="Full Address" type="text" required />
 
             <label>GST Number:</label>
-            <input name="gstNumber" placeholder="22AAAAA0000A1Z5" type="text" required />
+            <input name="gstNumber" placeholder="Ex - 0056322" type="text" required />
 
             <button type="submit">Register as Merchant</button>
         </form>
@@ -144,7 +146,8 @@
             if (!userRes.ok) throw new Error("Session expired or unauthorized");
 
             const user = await userRes.json();
-
+             
+            
             document.getElementById("data").innerHTML = `
                 <p><b>ID:</b> ${user.id}</p>
                 <p><b>Username:</b> ${user.username}</p>
@@ -165,6 +168,10 @@
 
             if (merchantRes.ok) {
                 const merchantData = await merchantRes.json();
+
+                // save till session 
+                sessionStorage.setItem('merchantUser' , JSON.stringify(merchantData)) ; 
+
                 alreadyMerchant.classList.remove("hidden");
                 notMerchant.classList.add("hidden");
                 billResult.innerHTML = ""; // clear previous
@@ -182,8 +189,11 @@
                 alreadyMerchant.classList.add("hidden");
             }
 
+            createConnection(role) ; 
+
         } catch (err) {
             document.getElementById("error").innerText = err.message;
+            console.log(err.message)
             setTimeout(() => window.location.href = "/login.html", 2500);
         }
     }
@@ -292,6 +302,6 @@
     // Load page
     loadUserAndCheckMerchant();
 </script>
-
+<script src="socket.js"></script>
 </body>
 </html>

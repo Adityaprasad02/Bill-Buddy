@@ -23,7 +23,7 @@ public class Config {
                               request.requestMatchers("/register.html",
                                               "/login.html" , "/user/create/**" , "/index.html" ,"/h2/**").permitAll()
                                       .requestMatchers("/merchant/**").hasRole("MERCHANT")
-                                      .requestMatchers("/user/**" , "/dashboard.html").hasAnyRole("CUSTOMER" , "MERCHANT")
+                                      .requestMatchers("/user/**" , "/dashboard.html" , "/ws/**").hasAnyRole("CUSTOMER" , "MERCHANT")
                                       .anyRequest().authenticated())
                   .headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                   .formLogin( form -> form.loginPage("/login.html").loginProcessingUrl("/do-login").defaultSuccessUrl("/dashboard.html" , true).permitAll()) ;
