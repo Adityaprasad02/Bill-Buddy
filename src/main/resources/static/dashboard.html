@@ -32,6 +32,34 @@
             border-radius: 6px; white-space: pre-wrap; font-family: monospace; overflow-x: auto;
         }
         #error { color: #d32f2f; font-weight: bold; min-height: 24px; }
+        .notifications-container { max-width: 900px; }
+        .notification-item {
+            background: #fff; border-left: 4px solid #1976d2; padding: 16px;
+            margin: 12px 0; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .notification-header { font-weight: 600; color: #333; margin-bottom: 8px; }
+        .notification-details { 
+            font-size: 0.95rem; color: #666; margin: 8px 0;
+            line-height: 1.6;
+        }
+        .notification-actions {
+            display: flex; gap: 10px; margin-top: 12px;
+        }
+        .pay-btn {
+            background: #4caf50; flex: 1;
+        }
+        .pay-btn:hover { background: #388e3c; }
+        .decline-btn {
+            background: #f44336; flex: 1;
+        }
+        .decline-btn:hover { background: #d32f2f; }
+        #notificationsList {
+            max-height: 600px; overflow-y: auto;
+        }
+        .empty-notifications {
+            text-align: center; color: #999; padding: 30px 20px;
+            font-style: italic;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js" integrity="sha512-iKDtgDyTHjAitUDdLljGhenhPwrbBfqTKWO1mkhSFH3A7blITC9MhYon6SjnMhp4o0rADGw9yAC6EW4t5a4K3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js" integrity="sha512-1QvjE7BtotQjkq8PxLeF6P46gEpBRXuskzIVgjFpekzFVF4yjRgrQvTG1MTOJ3yQgvTteKAcO7DSZI92+u/yZw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -128,6 +156,14 @@
     </div>
 </div>
 
+<!-- Notifications Section -->
+<section id="notifications-section" class="notifications-container">
+    <h3>📬 Bill Notifications</h3>
+    <div id="notificationsList">
+        <div class="empty-notifications">No notifications yet</div>
+    </div>
+</section>
+
 <button onclick="logout()" style="margin-top: 30px; background: #d32f2f;">Logout</button>
 
 <script>
@@ -157,7 +193,12 @@
 
             const role = (user.role || "").toUpperCase().trim();
 
-            if (role === "CUSTOMER" || role === "USER") {
+            
+                // create socket connection 
+                createConnection(role) ; 
+
+            if (role === "CUSTOMER") {
+                
                 merchantSection.classList.add("hidden");
                 return;
             }
@@ -189,7 +230,6 @@
                 alreadyMerchant.classList.add("hidden");
             }
 
-            createConnection(role) ; 
 
         } catch (err) {
             document.getElementById("error").innerText = err.message;
@@ -244,7 +284,8 @@
             console.error(err);
         }
     });
-
+    
+    var sendBillPayload = null  ; 
     // Create Bill
     document.getElementById("createBillForm")?.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -278,6 +319,15 @@
             if (!res.ok) throw new Error((await res.json()).message || `Error ${res.status}`);
 
             const result = await res.json(); console.log(result) ; 
+
+             sendBillPayload = {
+                'customerName' : result.billCustomerDetails.customerName , 
+                'billId' : result.billId , 
+                'title'  : result.title ,
+                'amount' : result.amount,
+                'merchantName': result.billMerchantDetails.merchantName
+            }
+
             billResult.innerHTML = `
                 <h3 style="color:green">Bill Generated Successfully!</h3>
                 <pre>${JSON.stringify(result, null, 2)}</pre>
@@ -288,10 +338,6 @@
             console.error(err);
         }
     });
-
-    function sendBill() {
-        alert("Send functionality (WhatsApp / SMS / Email) coming soon!");
-    }
 
     function logout() {
         fetch("/logout", { credentials: "include" })

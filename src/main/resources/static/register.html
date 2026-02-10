@@ -80,6 +80,10 @@
     </select>
 
     <button onclick="register()">Register</button>
+
+    <label>Login : 
+        <a href="login.html">login</a>
+    </label>
 </div>
 <script>
     async function register() {
@@ -128,6 +132,8 @@
                     <p><b>Role:</b> ${result.role}</p>
                 </div>
             `;
+
+
 
         } catch (err) {
             messageDiv.innerHTML =
