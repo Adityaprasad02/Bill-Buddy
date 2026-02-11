@@ -2,10 +2,12 @@ package com.company.Bill_Bridge.controller;
 
 
 import com.company.Bill_Bridge.model.dtos.RequestDtos.SendBillNotification;
+import com.company.Bill_Bridge.model.dtos.RequestDtos.SendPaymentNotification;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.json.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -17,12 +19,37 @@ import org.springframework.stereotype.Controller;
 public class SocketController {
 
     @Autowired
-    private SimpMessagingTemplate messagingTemplate ;
+    private SimpMessagingTemplate messagingTemplate;
+    
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @MessageMapping("/bill.send")
-    public void handleSendMessage(@Payload SendBillNotification notification){
-        String customer = notification.customerName() ;
-        log.info("message {} -> {}" , notification , customer  ) ;
-        messagingTemplate.convertAndSendToUser(customer , "/queue/notify" , notification);
+    public void handleSendBillNotificationMessage(@Payload SendBillNotification notification){
+        String receiver = notification.customerName() ;
+        try {
+            messagingTemplate.convertAndSendToUser(receiver , "/queue/notify" , notification);
+            log.info("Bill notification sent successfully to {}", receiver);
+        } catch (Exception e) {
+            log.error("Error sending bill notification to {}: {}", receiver, e.getMessage(), e);
+        }
+    }
+
+    @MessageMapping("/bill.response")
+    public void handleCustomerBillResponse(@Payload SendPaymentNotification notification , Message<?> message) {
+
+        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message) ;
+        String merchantUserName = accessor.getFirstNativeHeader("merchantUserName") ;
+
+        try {
+            messagingTemplate.convertAndSendToUser(
+                    merchantUserName ,
+                    "/queue/notify",
+                    notification
+            );
+        } catch (MessagingException e) {
+            log.info("error :> {} " , e.getMessage());
+        }
+
+
     }
 }

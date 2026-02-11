@@ -55,7 +55,8 @@ public class UserService {
                 .email(email)
                 .password(encoder.encode(password))
                 .role(role)
-                .authProvider(authProvider).build();
+                .authProvider(authProvider)
+                .build();
 
         User save = userRepository.save(newUser);
 
@@ -106,7 +107,7 @@ public class UserService {
     public ResponseBillGenerated generateBill(User merchantUser, Long customerId, RequestBillCreation bill) throws DBException, DenialException {
 
         User customer = userRepository.findById(customerId)
-                .orElseThrow( () -> new DBException("User with this id " + customerId + "doesn't exist") );
+                .orElseThrow( () -> new DBException("User with this id " + customerId + " doesn't exist") );
 
 
         Long merchantUserid = merchantUser.getId();
@@ -133,7 +134,8 @@ public class UserService {
         Bill savedBill = billRepository.save(billGenerated) ;
 
         return new ResponseBillGenerated(
-                 new BillMerchantDetails(savedBill.getMerchant().getMerchantId() , savedBill.getMerchant().getBusinessName()),
+                 new BillMerchantDetails(savedBill.getMerchant().getMerchantId() , savedBill.getMerchant().getBusinessName(),
+                                                   savedBill.getMerchant().getUser().getUsername()),
                  new BillCustomerDetails(savedBill.getUser().getId() , savedBill.getUser().getUsername()),
                  savedBill.getBillId(),
                  savedBill.getTitle(),

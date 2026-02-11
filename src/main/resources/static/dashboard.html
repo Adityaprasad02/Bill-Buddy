@@ -53,12 +53,21 @@
             background: #f44336; flex: 1;
         }
         .decline-btn:hover { background: #d32f2f; }
+        button:disabled {
+            background: #ccc; cursor: not-allowed; opacity: 0.6;
+        }
+        button:disabled:hover {
+            background: #ccc;
+        }
+        .notification-subsection {
+            margin-bottom: 30px; padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #e0e0e0;
+        }
+        .subsection-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 16px; border-bottom: 2px solid #1976d2; padding-bottom: 10px; }
         #notificationsList {
             max-height: 600px; overflow-y: auto;
         }
-        .empty-notifications {
-            text-align: center; color: #999; padding: 30px 20px;
-            font-style: italic;
+        .empty-state {
+            text-align: center; color: #999; padding: 30px 20px; font-style: italic;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js" integrity="sha512-iKDtgDyTHjAitUDdLljGhenhPwrbBfqTKWO1mkhSFH3A7blITC9MhYon6SjnMhp4o0rADGw9yAC6EW4t5a4K3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -118,7 +127,6 @@
 
                 <div style="margin-top: 16px;">
                     <button type="submit">Generate Bill</button>
-                    <button type="button" class="send-btn" onclick="sendBill()">Send (Coming Soon)</button>
                 </div>
             </form>
 
@@ -158,9 +166,38 @@
 
 <!-- Notifications Section -->
 <section id="notifications-section" class="notifications-container">
-    <h3>📬 Bill Notifications</h3>
-    <div id="notificationsList">
-        <div class="empty-notifications">No notifications yet</div>
+    <!-- Merchant Section -->
+    <div id="merchant-bills-section" class="hidden">
+        <h3>📬 Bill Management</h3>
+        
+        <!-- Send Bill Subsection -->
+        <div class="notification-subsection">
+            <div class="subsection-title">📤 Send Bill to Customer</div>
+            <div id="sendBillList">
+                <div class="empty-state">Generate a bill first to send it to customer</div>
+            </div>
+        </div>
+
+        <!-- Receive Customer Response Subsection -->
+        <div class="notification-subsection">
+            <div class="subsection-title">📥 Customer Bill Response</div>
+            <div id="receiveBillList">
+                <div class="empty-state">No responses from customers yet</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Section -->
+    <div id="customer-bills-section" class="hidden">
+        <h3>📬 My Bills</h3>
+        
+        <!-- Receive Bills Subsection -->
+        <div class="notification-subsection">
+            <div class="subsection-title">💸 Received Bills</div>
+            <div id="customerBillsList">
+                <div class="empty-state">No bills received yet</div>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -175,6 +212,14 @@
     const resultDiv         = document.getElementById("resultdiv");
     const billResult        = document.getElementById("billResult");
     const merchantDisplay   = document.querySelector(".merchant-display");
+    const sendBillList      = document.getElementById("sendBillList");
+    const receiveBillList   = document.getElementById("receiveBillList");
+    const merchantBillsSection = document.getElementById("merchant-bills-section");
+    const customerBillsSection = document.getElementById("customer-bills-section");
+    const customerBillsList = document.getElementById("customerBillsList");
+    
+    let generatedBills = {}; // Track generated bills for sending
+    let currentUserRole = null; // Store current user role
 
     async function loadUserAndCheckMerchant() {
         try {
@@ -194,24 +239,27 @@
             const role = (user.role || "").toUpperCase().trim();
 
             
-                // create socket connection 
-                createConnection(role) ; 
+            // create socket connection 
+            createConnection(role) ; 
+            
+            currentUserRole = role; // Store role
 
             if (role === "CUSTOMER") {
                 
                 merchantSection.classList.add("hidden");
+                merchantBillsSection.classList.add("hidden");
+                customerBillsSection.classList.remove("hidden");
                 return;
             }
 
             merchantSection.classList.remove("hidden");
+            merchantBillsSection.classList.remove("hidden");
+            customerBillsSection.classList.add("hidden");
 
             const merchantRes = await fetch("/merchant/getDetails", { credentials: "include" });
 
             if (merchantRes.ok) {
                 const merchantData = await merchantRes.json();
-
-                // save till session 
-                sessionStorage.setItem('merchantUser' , JSON.stringify(merchantData)) ; 
 
                 alreadyMerchant.classList.remove("hidden");
                 notMerchant.classList.add("hidden");
@@ -266,7 +314,12 @@
                 body: JSON.stringify(data)
             });
 
-            if (!res.ok) throw new Error((await res.json()).message || `Error ${res.status}`);
+            if (!res.ok) {
+            var responseText = await res.json();
+                console.log("Error response:", responseText);
+                throw new Error(responseText.error || `Error ${res.status}`);
+            }
+
 
             const result = await res.json();
             resultDiv.innerHTML = `
@@ -316,22 +369,35 @@
                 body: JSON.stringify(data)
             });
 
-            if (!res.ok) throw new Error((await res.json()).message || `Error ${res.status}`);
+            if (!res.ok) {
+            var responseText = await res.json();
+                console.log("Error response:", responseText);
+                throw new Error(responseText.error || `Error ${res.status}`);
+            }
 
-            const result = await res.json(); console.log(result) ; 
-
+            const billData = await res.json(); console.log(billData) ; 
+             
+            // // stompClient.send("/app/bill.send" , {} , JSON.stringify(sendBillPayload stored in generatedBills[billId])) ;
              sendBillPayload = {
-                'customerName' : result.billCustomerDetails.customerName , 
-                'billId' : result.billId , 
-                'title'  : result.title ,
-                'amount' : result.amount,
-                'merchantName': result.billMerchantDetails.merchantName
+                'customerName' : billData.billCustomerDetails.customerName ,
+                'billId' : billData.billId , 
+                'title'  : billData.title ,
+                'amount' : billData.amount,
+                'merchantName': billData.billMerchantDetails.merchantName,
+                'merchantUserName': billData.billMerchantDetails.merchantUserName,
+                'merchantId': billData.billMerchantDetails.merchantId,
+                'customerId': billData.billCustomerDetails.customerId
             }
 
             billResult.innerHTML = `
                 <h3 style="color:green">Bill Generated Successfully!</h3>
-                <pre>${JSON.stringify(result, null, 2)}</pre>
+                <pre>${JSON.stringify(billData, null, 2)}</pre>
             `;
+
+            // Add bill to the "Send Bill" section
+            addBillToSendSection(billData);
+            
+            form.reset();
 
         } catch (err) {
             billResult.innerHTML = `<p style="color:red;">Failed: ${err.message}</p>`;
@@ -339,11 +405,144 @@
         }
     });
 
+    function addBillToSendSection(billData) {
+        const billId = billData.billId;
+        
+        // Store bill data
+        generatedBills[billId] = sendBillPayload ; 
+
+        // Create UI element
+        const billElement = document.createElement("div");
+        billElement.className = "notification-item";
+        billElement.id = `send-bill-${billId}`;
+        const showSendBtn = billData.status !== "PAID";
+
+    
+        billElement.innerHTML = `
+            <div class="notification-header">
+                📋 ${billData.billMerchantDetails.merchantName} → ${billData.billCustomerDetails.customerName}
+            </div>
+
+            <div class="notification-details">
+                <p><b>Bill ID:</b> ${billId}</p>
+                <p><b>Title:</b> ${billData.title}</p>
+                <p><b>Amount:</b> ₹${billData.amount}</p>
+                <p><b>Status:</b> ${billData.status}</p>
+            </div>
+
+            ${
+                showSendBtn
+                    ? `<div class="notification-actions">
+                        <button class="send-btn"
+                                onclick="sendBillToCustomer(${billId})"
+                                id="send-btn-${billId}">
+                            Send Bill
+                        </button>
+                    </div>`
+                    : ``
+            }
+        `;
+
+        // Clear empty state if exists
+        if (sendBillList.querySelector(".empty-state")) {
+            sendBillList.innerHTML = "";
+        }
+
+        // Prepend to list
+        sendBillList.insertAdjacentElement("afterbegin", billElement);
+    }
+
+    function sendBillToCustomer(billId) {
+        const bill = generatedBills[billId];
+        if (!bill) return;
+
+        const sendBtn = document.getElementById(`send-btn-${billId}`);
+        sendBtn.disabled = true;
+        sendBtn.innerText = "Sending...";
+
+
+        sendBill(bill,sendBtn) ; 
+    }
+
     function logout() {
         fetch("/logout", { credentials: "include" })
             .catch(() => {})
             .finally(() => window.location.href = "/login.html");
     }
+
+    // Handle incoming customer responses
+    function addCustomerResponse(responseData) {
+        console.log('====== ADD CUSTOMER RESPONSE ======');
+        console.log('Response Data:', JSON.stringify(responseData, null, 2));
+        
+        // Validate response data
+        if (!responseData) {
+            console.error('❌ Response data is null or undefined');
+            return;
+        }
+        
+        if (!responseData.billId) {
+            console.error('❌ Response missing billId:', responseData);
+            return;
+        }
+        
+        // Find and validate receiveBillList element
+        console.log('🔍 Looking for receiveBillList element...');
+        if (!receiveBillList) {
+            console.error('❌ CRITICAL: receiveBillList element NOT found!');
+            console.log('Current merchant bills section hidden?', merchantBillsSection?.classList.contains('hidden'));
+            return;
+        }
+        
+        console.log('✅ receiveBillList element found');
+        
+        // Clear empty state if exists
+        const emptyState = receiveBillList.querySelector(".empty-state");
+        if (emptyState) {
+            console.log('🗑️ Removing empty state element');
+            receiveBillList.innerHTML = "";
+        }
+
+        const responseElement = document.createElement("div");
+        responseElement.className = "notification-item";
+        
+        const statusColor = responseData.status === "PAID" ? "#4caf50" : 
+                          responseData.status === "DECLINED" ? "#f44336" : "#ff9800";
+        
+        responseElement.style.borderLeftColor = statusColor;
+        responseElement.id = `response-${responseData.billId}-${Date.now()}`;
+        
+        console.log('📝 Creating response element with:');
+        console.log('- Bill ID:', responseData.billId);
+        console.log('- Customer:', responseData.customerName);
+        console.log('- Status:', responseData.status);
+        console.log('- Color:', statusColor);
+        
+        responseElement.innerHTML = `
+            <div class="notification-header" style="color: ${statusColor}">
+                💬 Response from ${responseData.customerName}
+                <div>Customer id : ${responseData.customerId}</div>
+            </div>
+            <div class="notification-details">
+                <p><b>Merchant ID:</b> ${responseData.merchantId}</p>
+                <p><b>Merchant Name:</b> ${responseData.merchantName}</p>
+                <p><b>Bill ID:</b> ${responseData.billId}</p>
+                <p><b>Bill Title:</b> ${responseData.title}</p>
+                <p><b>Amount:</b> ₹${responseData.amount ? parseFloat(responseData.amount).toFixed(2) : 'N/A'}</p>
+                <p><b>Status:</b> <span style="color: ${statusColor}; font-weight: bold;">${responseData.status}</span></p>
+                <p><b>Received:</b> ${new Date().toLocaleString()}</p>
+            </div>
+        `;
+
+        receiveBillList.insertAdjacentElement("afterbegin", responseElement);
+        console.log('✅ Response element inserted into receiveBillList');
+        console.log('Current items in receiveBillList:', receiveBillList.children.length);
+        console.log('====== END ADD CUSTOMER RESPONSE ======');
+    }
+
+    // Make function globally available for WebSocket messages
+    window.addCustomerResponse = addCustomerResponse;
+    window.sendBillToCustomer = sendBillToCustomer;
 
     // Load page
     loadUserAndCheckMerchant();
