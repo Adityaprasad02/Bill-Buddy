@@ -75,7 +75,7 @@ public class UserService {
 
         String businessName = register.getBusinessName();
         MerchantType type = register.getType() ;
-        Long gst = register.getGstNumber();
+        String gst = register.getGstNumber().toUpperCase();
         String address = register.getAddress();
 
         Merchant merchant = Merchant.builder()

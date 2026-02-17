@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
-public record SendPaymentNotification(
+public record PaymentResponse(
         @NotNull  Long billId,
         @NotNull Long customerId,
         @NotBlank  String customerName,

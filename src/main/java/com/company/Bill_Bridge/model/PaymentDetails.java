@@ -1,6 +1,7 @@
 package com.company.Bill_Bridge.model;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,7 +9,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Builder
@@ -17,25 +20,33 @@ import java.time.LocalDateTime;
 @Data
 @Table(name = "payment_details")
 public class PaymentDetails {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id ;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "txnId")
+    private String TxnId ;
 
     @OneToOne( fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_bill"  , referencedColumnName = "billId" , nullable = false )
     private Bill bill ;
 
-    @CreationTimestamp
-    @Column(name = "payment_paidAt")
-    private LocalDateTime paidAt ;
+    private String bankTxnId ;
 
-    @Column( name="payment_gateway" )
-    private String gateway ;
+    private String orderId ;
 
-    @Column(name = "gateway_txn_id", unique = true)
-    private String gatewayTxnId;
+    private BigDecimal txnAmount ;
 
-    @CreationTimestamp
-    @Column(name = "payment_created")
-    private LocalDateTime createdAt;
+    private String txnType ;
+
+    private String gatewayName ;
+
+    private String bankName ;
+
+    private BigDecimal refundAmt ;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.S")
+    private LocalDateTime txnDate;
+
 }

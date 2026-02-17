@@ -154,258 +154,337 @@ function renderCustomerNotifications() {
                 <button class="pay-btn" onclick="handleCustomerPay(${index})">
                     Pay ₹${parseFloat(notif.amount).toFixed(2)}
                 </button>
-                <button class="decline-btn" onclick="handleCustomerDecline(${index})">
-                    Decline
-                </button>
             </div>
         </div>
     `}).join('');
 }
 
-function handleCustomerPay(index) {
+async function handleCustomerPay(index) {
     const bill = notifications[index];
     if (!bill) {
-        console.error('❌ Bill not found at index:', index);
+        console.error('Bill not found at index:', index);
+        return;
+    }
+   
+    // Validate merchantUserName EXISTS FIRST
+    if (!bill.merchantUserName || bill.merchantUserName.trim() === '') {
+        alert(' ERROR: Merchant information is incomplete. Please refresh the page and try again.');
         return;
     }
     
-    console.log('💳 PAY BUTTON CLICKED');
-    console.log('Full bill object:', JSON.stringify(bill, null, 2));
-    console.log('merchantUserName value:', bill.merchantUserName);
-    console.log('merchantUserName type:', typeof bill.merchantUserName);
-    
-    const response = confirm(`Pay received bill amount? ₹${parseFloat(bill.amount).toFixed(2)}`);
-    if (response) {
-        console.log('✅ User confirmed payment');
-        console.log('⏳ Processing payment of ₹${parseFloat(bill.amount).toFixed(2)}...');
-        alert(`Processing payment of ₹${parseFloat(bill.amount).toFixed(2)}...`);
+    const payConfirm = confirm(`Pay received bill amount? ₹${parseFloat(bill.amount).toFixed(2)}`);
+    if (payConfirm) {
         
-        // CHECK: Validate merchantUserName exists
-        if (!bill.merchantUserName || bill.merchantUserName.trim() === '') {
-            console.error('❌ CRITICAL: merchantUserName is missing or empty!');
-            console.error('Bill object:', bill);
-            alert('⚠️ ERROR: Merchant information is incomplete. Please refresh the page and try again.');
-            return;
-        }
-        
-        console.log('🚀 Creating payment response object');
-        
-        // Send payment confirmation back to merchant through WebSocket
-        // IMPORTANT: Include merchantUserName in payload for routing
-        const paymentResponse = {
-            billId: bill.billId,
-            customerId: bill.customerId,
-            customerName: bill.customerName,
-            merchantId: bill.merchantId,
-            merchantName: bill.merchantName,
-            title: bill.title,
-            status: 'PAID',
-            timestamp: new Date().toISOString(),
-            amount: bill.amount
-        };
 
-        console.log('📤 Payment Response Object Created:');
-        console.log(JSON.stringify(paymentResponse, null, 2));
-
-        // Verify WebSocket connection BEFORE sending
-        console.log('🔌 WebSocket Status Check:');
-        console.log('- stompClient exists:', typeof stompClient !== "undefined");
-        console.log('- stompClient is null:', stompClient === null);
-        console.log('- stompClient.connected:', stompClient?.connected);
-        
-        // Send to merchant's specific queue
-        if (typeof stompClient !== "undefined" && stompClient !== null && stompClient.connected) {
-            try {
-                console.log('📡 Attempting to send payment response...');
-                
-                // Validate payload structure
-                if (typeof paymentResponse !== 'object' || paymentResponse === null) {
-                    throw new Error('Invalid payment response object');
-                }
-                
-                // Ensure we're sending a proper JSON string, not nested arrays
-                const jsonString = JSON.stringify(paymentResponse);
-                console.log('📋 JSON String to send:', jsonString);
-                console.log('✅ Valid JSON: ', jsonString[0] === '{' && jsonString[jsonString.length - 1] === '}');
-                
-                // Method: Send WITHOUT header, include merchantUserName in payload
-                // The backend will extract it from the payload
-                stompClient.send(
-                    "/app/bill.response",
-                    {
-                        merchantUserName: bill.merchantUserName  // Include in header for backend routing (optional if backend extracts from payload)
-                    },  // No custom headers - just empty object
-                    jsonString  // Send the stringified object
-                );
-                
-                console.log('✅ Message sent to /app/bill.response endpoint');
-                console.log('⏳ Waiting for server processing...');
-                
-            } catch (err) {
-                console.error('❌ SEND ERROR - Failed to send payment response:', err);
-                console.error('Error message:', err.message);
-                console.error('Error stack:', err.stack);
-                alert('❌ Failed to send payment confirmation: ' + err.message);
-                return;
-            }
-        } else {
-            console.error('❌ WEBSOCKET NOT CONNECTED!');
-            console.log('Details:', {
-                clientExists: typeof stompClient !== "undefined",
-                clientNull: stompClient === null,
-                connected: stompClient?.connected
+        try {
+            // Fetch payment details with error handling
+            const resp = await fetch(`/initiate/payment/${bill.billId}`, {
+                method: 'POST',
             });
-            alert('❌ WebSocket connection is not active. Please refresh the page.');
+            
+            // Check if response is successful
+            if (!resp.ok) {
+                throw new Error(`Payment initiation failed with status ${resp.status}`);
+            }
+
+            const data = await resp.json();
+            
+            console.log('received initiate payment response:', data);
+            
+            invokePaytmPayment(data);
+            
+        } catch (err) {
+            console.error(' FETCH ERROR - Failed to initiate payment:', err);
+            console.error('Error message:', err.message);
+            alert(' Payment initiation failed: ' + err.message);
             return;
         }
-        
-        console.log('⏳ Removing bill from list after 1 second...');
-        
-        // Wait a moment before removing (let server process it)
-        setTimeout(() => {
-            notifications.splice(index, 1);
-            renderCustomerNotifications();
-            console.log('✅ Payment processed: Bill removed from list');
-        }, 1000);
-        
-        console.log('✅ PAYMENT FLOW COMPLETE');
-        alert('✅ Payment confirmation sent!');
+    }
+
+    function invokePaytmPayment(data) {
+        const script = document.createElement('script');
+
+        script.src = "https://securestage.paytmpayments.com/merchantpgpui/checkoutjs/merchants/tXvhzx31620803258735.js" ; 
+        script.crossOrigin = "anonymous" ; 
+        script.onload = function() {
+            var config = {
+                    "root": "",
+                    "flow": "DEFAULT",
+                    "data": {
+                    "orderId": data.orderId,
+                    "token": data.body.txnToken ,
+                    "tokenType": "TXN_TOKEN",
+                    "amount": data.amount 
+                    },
+                   "merchant": {
+                        mid :  "tXvhzx31620803258735", 
+                        redirect: false 
+                    },
+                    "handler": {
+                            "notifyMerchant": function(eventName,data){
+                                console.log("notifyMerchant handler function called");
+                                console.log("eventName => ",eventName);
+                                console.log("data => ",data);
+                               },
+                            "transactionStatus": function(data){
+                                console.log("transactionStatus handler function called");
+                                console.log("data => ",data);  
+
+                                
+                                
+                                     alert(data.STATUS + " " + data.RESPMSG);
+
+                                    // verify the payment status with paytm
+                                    verifyPaymentTransaction(data.ORDERID) ; 
+
+                                window.Paytm.CheckoutJS.close(); // close the checkout paytm window
+                            }  
+                    }  
+                };
+
+                  if(window.Paytm && window.Paytm.CheckoutJS){
+                        window.Paytm.CheckoutJS.onLoad(function excecuteAfterCompleteLoad() {
+                            // initialze configuration using init method
+                            window.Paytm.CheckoutJS.init(config).then(function onSuccess() {
+                                // after successfully updating configuration, invoke JS Checkout
+                                window.Paytm.CheckoutJS.invoke();
+                            }).catch(function onError(error){
+                            console.log("error => ",error);
+                            });
+                        });
+                    }
+    
+            }
+            
+             document.body.appendChild(script);
+          
+            }
+
+         async function verifyPaymentTransaction(orderId) {
+
+             const result  = await fetch(`/verify/payment/${orderId}`, {
+                method: 'POST',
+            }).then(resp => {
+                if (!resp.ok) {
+                    throw new Error(`Payment verification failed with status ${resp.status}`);
+                }
+                return resp.json();
+             }).then(data => {
+
+                console.log('Payment verification response:', data);
+
+                sendPaymentAction(bill, index  , data);
+
+              
+            }).catch(err => {
+                console.error('Payment verification error:', err);
+                 alert('Payment verification failed: ' + err.message);
+            });
+         }   
+}
+
+// Helper function to send payment confirmation to merchant after successful Paytm payment
+function sendPaymentAction(bill, index , data) {
+    // Send payment confirmation back to merchant through WebSocket
+    const paymentResponse = {
+        billId: bill.billId,
+        customerId: bill.customerId,
+        customerName: bill.customerName,
+        merchantId: bill.merchantId,
+        merchantName: bill.merchantName,
+        title: bill.title,
+        status: data.body.resultInfo.resultStatus,
+        timestamp: new Date().toISOString(),
+        amount: bill.amount
+    };
+
+    // Send to merchant's specific queue
+    if (typeof stompClient !== "undefined" && stompClient !== null && stompClient.connected) {
+        try {
+            // Validate payload structure
+            if (typeof paymentResponse !== 'object' || paymentResponse === null) {
+                throw new Error('Invalid payment response object');
+            }
+            
+
+            const finalPayload = {
+                paymentResponse : paymentResponse,
+                paymentData : data
+            }
+            // Ensure we're sending a proper JSON string, not nested arrays
+            const jsonString = JSON.stringify(finalPayload);
+
+
+            // Send payment response to merchant
+            stompClient.send(
+                "/app/bill.response",
+                {
+                    merchantUserName: bill.merchantUserName , 
+                },
+                jsonString
+            );
+            
+            console.log('✅ Message sent to /app/bill.response endpoint');
+            console.log('⏳ Waiting for server processing...');
+            
+            // Wait a moment before removing (let server process it)
+            setTimeout(() => { 
+                notifications.splice(index, 1);
+                renderCustomerNotifications();
+                alert('Payment status sent!');
+            }, 1000);
+            
+        } catch (err) {
+            console.error('❌ SEND ERROR - Failed to send payment response:', err);
+            console.error('Error message:', err.message);
+            console.error('Error stack:', err.stack);
+            alert('❌ Failed to send payment confirmation: ' + err.message);
+        }
+    } else {
+        console.error('❌ WEBSOCKET NOT CONNECTED!');
+        console.log('Details:', {
+            clientExists: typeof stompClient !== "undefined",
+            clientNull: stompClient === null,
+            connected: stompClient?.connected
+        });
+        alert('❌ WebSocket connection is not active. Please refresh the page.');
     }
 }
 
-function handleCustomerDecline(index) {
-    const bill = notifications[index];
-    if (!bill) {
-        console.error('❌ Bill not found at index:', index);
-        return;
-    }
+// function handleCustomerDecline(index) {
+//     const bill = notifications[index];
+//     if (!bill) {
+//         console.error('❌ Bill not found at index:', index);
+//         return;
+//     }
     
-    console.log('Full bill object:', JSON.stringify(bill, null, 2));
-    console.log('merchantUserName value:', bill.merchantUserName);
+//     console.log('Full bill object:', JSON.stringify(bill, null, 2));
+//     console.log('merchantUserName value:', bill.merchantUserName);
     
-    const confirmed = confirm('Are you sure you want to decline this bill?');
-    if (confirmed) {
-        console.log('✅ User confirmed decline');
-        alert('Declining bill...');
+//     const confirmed = confirm('Are you sure you want to decline this bill?');
+//     if (confirmed) {
+//         console.log('✅ User confirmed decline');
+//         alert('Declining bill...');
         
-        // CHECK: Validate merchantUserName exists
-        if (!bill.merchantUserName || bill.merchantUserName.trim() === '') {
-            console.error('❌ CRITICAL: merchantUserName is missing or empty!');
-            console.error('Bill object:', bill);
-            alert('⚠️ ERROR: Merchant information is incomplete. Please refresh the page and try again.');
-            return;
-        }
+//         // CHECK: Validate merchantUserName exists
+//         if (!bill.merchantUserName || bill.merchantUserName.trim() === '') {
+//             console.error('❌ CRITICAL: merchantUserName is missing or empty!');
+//             console.error('Bill object:', bill);
+//             alert('⚠️ ERROR: Merchant information is incomplete. Please refresh the page and try again.');
+//             return;
+//         }
         
-        console.log('🚀 Creating decline response object');
+//         console.log('🚀 Creating decline response object');
         
-        // Send decline confirmation back to merchant through WebSocket
-        // IMPORTANT: Include merchantUserName in payload for routing
-        const declineResponse = {
-            billId: bill.billId,
-            customerId: bill.customerId,
-            customerName: bill.customerName,
-            merchantId: bill.merchantId,
-            merchantName: bill.merchantName,
-            title: bill.title,
-            status: 'DECLINED',
-            timestamp: new Date().toISOString(),
-            amount: bill.amount
-        };
+//         // Send decline confirmation back to merchant through WebSocket
+//         // IMPORTANT: Include merchantUserName in payload for routing
+//         const declineResponse = {
+//             billId: bill.billId,
+//             customerId: bill.customerId,
+//             customerName: bill.customerName,
+//             merchantId: bill.merchantId,
+//             merchantName: bill.merchantName,
+//             title: bill.title,
+//             status: 'DECLINED',
+//             timestamp: new Date().toISOString(),
+//             amount: bill.amount
+//         };
 
-        console.log('📤 Decline Response Object Created:');
-        console.log(JSON.stringify(declineResponse, null, 2));
+//         console.log('📤 Decline Response Object Created:');
+//         console.log(JSON.stringify(declineResponse, null, 2));
 
-        // Verify WebSocket connection BEFORE sending
-        console.log('🔌 WebSocket Status Check:');
-        console.log('- stompClient exists:', typeof stompClient !== "undefined");
-        console.log('- stompClient is null:', stompClient === null);
-        console.log('- stompClient.connected:', stompClient?.connected);
+//         // Verify WebSocket connection BEFORE sending
+//         console.log('🔌 WebSocket Status Check:');
+//         console.log('- stompClient exists:', typeof stompClient !== "undefined");
+//         console.log('- stompClient is null:', stompClient === null);
+//         console.log('- stompClient.connected:', stompClient?.connected);
         
-        // Send to merchant's specific queue
-        if (typeof stompClient !== "undefined" && stompClient !== null && stompClient.connected) {
-            try {
-                console.log('📡 Attempting to send decline response...');
+//         // Send to merchant's specific queue
+//         if (typeof stompClient !== "undefined" && stompClient !== null && stompClient.connected) {
+//             try {
+//                 console.log('📡 Attempting to send decline response...');
                 
-                // Validate payload structure
-                if (typeof declineResponse !== 'object' || declineResponse === null) {
-                    throw new Error('Invalid decline response object');
-                }
+//                 // Validate payload structure
+//                 if (typeof declineResponse !== 'object' || declineResponse === null) {
+//                     throw new Error('Invalid decline response object');
+//                 }
                 
-                // Ensure we're sending a proper JSON string, not nested arrays
-                const jsonString = JSON.stringify(declineResponse);
-                console.log('📋 JSON String to send:', jsonString);
-                console.log('✅ Valid JSON: ', jsonString[0] === '{' && jsonString[jsonString.length - 1] === '}');
+//                 // Ensure we're sending a proper JSON string, not nested arrays
+//                 const jsonString = JSON.stringify(declineResponse);
+//                 console.log('📋 JSON String to send:', jsonString);
+//                 console.log('✅ Valid JSON: ', jsonString[0] === '{' && jsonString[jsonString.length - 1] === '}');
                 
-                // Method: Send WITHOUT header, include merchantUserName in payload
-                // The backend will extract it from the payload
-                stompClient.send(
-                    "/app/bill.response",
-                    {
-                        merchantUserName: bill.merchantUserName  // Include in header for backend routing (optional if backend extracts from payload)
-                    },  // No custom headers - just empty object
-                    jsonString  // Send the stringified object
-                );
+//                 // Method: Send WITHOUT header, include merchantUserName in payload
+//                 // The backend will extract it from the payload
+//                 stompClient.send(
+//                     "/app/bill.response",
+//                     {
+//                         merchantUserName: bill.merchantUserName  // Include in header for backend routing (optional if backend extracts from payload)
+//                     },  // No custom headers - just empty object
+//                     jsonString  // Send the stringified object
+//                 );
                 
-                console.log('✅ Message sent to /app/bill.response endpoint');
-                console.log('⏳ Waiting for server processing...');
+//                 console.log('✅ Message sent to /app/bill.response endpoint');
+//                 console.log('⏳ Waiting for server processing...');
                 
-            } catch (err) {
-                console.error('❌ SEND ERROR - Failed to send decline response:', err);
-                console.error('Error message:', err.message);
-                console.error('Error stack:', err.stack);
-                alert('❌ Failed to send decline confirmation: ' + err.message);
-                return;
-            }
-        } else {
-            console.error('❌ WEBSOCKET NOT CONNECTED!');
-            console.log('Details:', {
-                clientExists: typeof stompClient !== "undefined",
-                clientNull: stompClient === null,
-                connected: stompClient?.connected
-            });
-            alert('❌ WebSocket connection is not active. Please refresh the page.');
-            return;
-        }
+//             } catch (err) {
+//                 console.error('❌ SEND ERROR - Failed to send decline response:', err);
+//                 console.error('Error message:', err.message);
+//                 console.error('Error stack:', err.stack);
+//                 alert('❌ Failed to send decline confirmation: ' + err.message);
+//                 return;
+//             }
+//         } else {
+//             console.error('❌ WEBSOCKET NOT CONNECTED!');
+//             console.log('Details:', {
+//                 clientExists: typeof stompClient !== "undefined",
+//                 clientNull: stompClient === null,
+//                 connected: stompClient?.connected
+//             });
+//             alert('❌ WebSocket connection is not active. Please refresh the page.');
+//             return;
+//         }
         
-        console.log('⏳ Removing bill from list after 1 second...');
+//         console.log('⏳ Removing bill from list after 1 second...');
         
-        // Wait a moment before removing (let server process it)
-        setTimeout(() => {
-            notifications.splice(index, 1);
-            renderCustomerNotifications();
-            console.log('✅ Decline processed: Bill removed from list');
-        }, 1000);
+//         // Wait a moment before removing (let server process it)
+//         setTimeout(() => {
+//             notifications.splice(index, 1);
+//             renderCustomerNotifications();
+//             console.log('✅ Decline processed: Bill removed from list');
+//         }, 1000);
         
-        console.log('✅ DECLINE FLOW COMPLETE');
-        alert('✅ Bill declined and notification sent!');
-    }
-}
+//         console.log('✅ DECLINE FLOW COMPLETE');
+//         alert('✅ Bill declined and notification sent!');
+//     }
+// }
 
 // ============ MERCHANT FUNCTIONS ============
+
+
 function handleMerchantNotification(notification) {
-    console.log('🏪 ============ MERCHANT NOTIFICATION RECEIVED ============');
-    console.log('Notification data:', JSON.stringify(notification, null, 2));
-    console.log('Notification type:', typeof notification);
+     
+     const paymentData = notification.paymentData ; 
+     const paymentResponse = notification.paymentResponse ;
+
+     // an endpoint for saving the paymentData in database
+
+     // an endpoint for updating the bill status in database 
     
     // Verify addCustomerResponse function exists
     if (typeof addCustomerResponse === 'function') {
-        console.log('✅ addCustomerResponse function found (globally available)');
         try {
-            addCustomerResponse(notification);
-            console.log('✅ addCustomerResponse called successfully');
+            addCustomerResponse(paymentResponse);
         } catch (err) {
-            console.error('❌ Error calling addCustomerResponse:', err);
             console.error('Error details:', err.message);
             console.error('Stack:', err.stack);
         }
     } else {
-        console.error('❌ CRITICAL: addCustomerResponse function NOT found!');
         console.log('Available functions in window:', Object.keys(window).filter(k => k.includes('Response') || k.includes('Customer')));
     }
     
     // Also store in notifications array
-    notifications.push(notification);
-    console.log('📌 Notification stored in array. Total notifications:', notifications.length);
+    notifications.push(paymentResponse);
     console.log('🏪 ========================================================');
 }
 

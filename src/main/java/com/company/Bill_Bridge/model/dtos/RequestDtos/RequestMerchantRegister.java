@@ -28,5 +28,5 @@ public class RequestMerchantRegister {
 
 
     @NotNull
-    private Long gstNumber ;
+    private String gstNumber ;
 }

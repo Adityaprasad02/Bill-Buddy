@@ -2,7 +2,7 @@ package com.company.Bill_Bridge.controller;
 
 
 import com.company.Bill_Bridge.model.dtos.RequestDtos.SendBillNotification;
-import com.company.Bill_Bridge.model.dtos.RequestDtos.SendPaymentNotification;
+import com.company.Bill_Bridge.model.dtos.RequestDtos.SendPaymentInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +35,10 @@ public class SocketController {
     }
 
     @MessageMapping("/bill.response")
-    public void handleCustomerBillResponse(@Payload SendPaymentNotification notification , Message<?> message) {
+    public void handleCustomerBillResponse(@Payload SendPaymentInfo paymentInfo , Message<?> message) {
+
+        log.info("paymentData : {} " , paymentInfo.paymentData() ) ;
+        log.info("paymentResponse : {} " , paymentInfo.paymentResponse() ) ;
 
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message) ;
         String merchantUserName = accessor.getFirstNativeHeader("merchantUserName") ;
@@ -44,7 +47,7 @@ public class SocketController {
             messagingTemplate.convertAndSendToUser(
                     merchantUserName ,
                     "/queue/notify",
-                    notification
+                    paymentInfo
             );
         } catch (MessagingException e) {
             log.info("error :> {} " , e.getMessage());

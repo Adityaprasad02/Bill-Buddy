@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.client.RestClient;
 
 @Configuration
 @EnableWebSecurity
@@ -34,5 +35,12 @@ public class Config {
      @Bean
      public BCryptPasswordEncoder encoder(){
           return new BCryptPasswordEncoder(12) ;
+     }
+
+     @Bean
+     public RestClient restClient (){
+          return  RestClient.builder()
+                  .baseUrl("https://securestage.paytmpayments.com")
+                  .build() ;
      }
 }

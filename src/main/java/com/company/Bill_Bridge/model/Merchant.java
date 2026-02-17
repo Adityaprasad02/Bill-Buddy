@@ -44,5 +44,5 @@ public class Merchant {
 
     @NotNull
     @Column(name = "gst_number" , unique = true , nullable = false)
-    private Long gstNumber ;
+    private String gstNumber ;
 }

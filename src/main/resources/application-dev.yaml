@@ -15,3 +15,17 @@ spring:
       enabled: true
       path: /h2
 
+paytm:
+  merchant-id: tXvhzx31620803258735
+  merchant-key: snZDiqGM3sEfN@Rp
+
+logging:
+    level:
+        com:
+          paytm: OFF
+        paytm:
+          pg: OFF
+
+
+
+

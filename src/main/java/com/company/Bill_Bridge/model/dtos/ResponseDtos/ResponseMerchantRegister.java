@@ -11,6 +11,6 @@ public record ResponseMerchantRegister(
         String businessName ,
         MerchantType type ,
         String address ,
-        Long gstNumber
+        String gstNumber
 ) {
 }

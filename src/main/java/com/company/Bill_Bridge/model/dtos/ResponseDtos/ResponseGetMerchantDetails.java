@@ -9,6 +9,6 @@ public record ResponseGetMerchantDetails(
         String businessName ,
         MerchantType type ,
         String address ,
-        Long gstNumber
+        String gstNumber
 ) {
 }

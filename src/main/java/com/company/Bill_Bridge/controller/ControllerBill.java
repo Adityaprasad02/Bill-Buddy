@@ -3,7 +3,6 @@ package com.company.Bill_Bridge.controller;
 
 import com.company.Bill_Bridge.exceptions.DBException;
 import com.company.Bill_Bridge.exceptions.DenialException;
-import com.company.Bill_Bridge.model.Merchant;
 import com.company.Bill_Bridge.model.User;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestBillCreation;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestMerchantRegister;
@@ -78,6 +77,9 @@ public class ControllerBill {
     public ResponseEntity<ResponseGetMerchantDetails> getMerchantDetails(@AuthenticationPrincipal User merchantUser) throws DBException {
           return ResponseEntity.ok(userService.getMerchantDetails(merchantUser)) ;
     }
+
+
+
 
 
 }
