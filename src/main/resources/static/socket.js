@@ -126,7 +126,7 @@ function renderCustomerNotifications() {
     if (!customerBillsList) return;
     
     if (notifications.length === 0) {
-        customerBillsList.innerHTML = '<div class="empty-state">No bills received yet</div>';
+        customerBillsList.innerHTML = '<div class="text-muted text-center py-3">No bills received yet</div>';
         return;
     }
     
@@ -140,20 +140,18 @@ function renderCustomerNotifications() {
         });
         
         return `
-        <div class="notification-item" id="customer-bill-${index}">
-            <div class="notification-header">
-                💸 Bill from ${notif.merchantName}
-            </div>
-            <div class="notification-details">
-                <p><strong>Amount:</strong> ₹${parseFloat(notif.amount).toFixed(2)}</p>
-                <p><strong>Title:</strong> ${notif.title}</p>
-                <p><strong>Bill ID:</strong> ${notif.billId}</p>
-                <p><strong>Customer Name : </strong>${notif.customerName}</p>
-            </div>
-            <div class="notification-actions">
-                <button class="pay-btn" onclick="handleCustomerPay(${index})">
-                    Pay ₹${parseFloat(notif.amount).toFixed(2)}
-                </button>
+        <div class="card mb-2" id="customer-bill-${index}">
+            <div class="card-body">
+                <div class="fw-semibold">💸 Bill from ${notif.merchantName}</div>
+                <div class="text-muted">Bill ID: ${notif.billId}</div>
+                <div class="mt-2">Amount: ₹${parseFloat(notif.amount).toFixed(2)}</div>
+                <div>Title: ${notif.title}</div>
+                <div class="text-muted">Customer: ${notif.customerName}</div>
+                <div class="mt-3">
+                    <button class="btn btn-success btn-sm" onclick="handleCustomerPay(${index})">
+                        Pay ₹${parseFloat(notif.amount).toFixed(2)}
+                    </button>
+                </div>
             </div>
         </div>
     `}).join('');
@@ -332,6 +330,9 @@ function sendPaymentAction(bill, index , data) {
                 notifications.splice(index, 1);
                 renderCustomerNotifications();
                 alert('Payment status sent!');
+                if (typeof window.refreshCustomerBills === "function") {
+                    window.refreshCustomerBills();
+                }
             }, 1000);
             
         } catch (err) {
@@ -486,6 +487,9 @@ function handleMerchantNotification(notification) {
     
     // Also store in notifications array
     notifications.push(paymentResponse);
+    if (typeof window.refreshMerchantBills === "function") {
+        setTimeout(() => window.refreshMerchantBills(), 1500);
+    }
     //console.log('🏪 ========================================================');
 }
 
@@ -533,27 +537,25 @@ function renderNotifications() {
     if (!notificationsList) return;
     
     if (notifications.length === 0) {
-        notificationsList.innerHTML = '<div class="empty-state">No notifications yet</div>';
+        notificationsList.innerHTML = '<div class="text-muted text-center py-3">No notifications yet</div>';
         return;
     }
     
     notificationsList.innerHTML = notifications.map((notif, index) => `
-        <div class="notification-item" id="notification-${index}">
-            <div class="notification-header">
-                💸 Bill from ${notif.merchantName}
-            </div>
-            <div class="notification-details">
-                <p><strong>Amount:</strong> ₹${parseFloat(notif.amount).toFixed(2)}</p>
-                <p><strong>Title:</strong> ${notif.title}</p>
-                <p><strong>Bill ID:</strong> ${notif.billId}</p>
-            </div>
-            <div class="notification-actions">
-                <button class="pay-btn" onclick="handlePay(${index}, ${parseFloat(notif.amount).toFixed(2)})">
-                    Pay ₹${parseFloat(notif.amount).toFixed(2)}
-                </button>
-                <button class="decline-btn" onclick="handleDecline(${index})">
-                    Decline
-                </button>
+        <div class="card mb-2" id="notification-${index}">
+            <div class="card-body">
+                <div class="fw-semibold">💸 Bill from ${notif.merchantName}</div>
+                <div class="text-muted">Bill ID: ${notif.billId}</div>
+                <div class="mt-2">Amount: ₹${parseFloat(notif.amount).toFixed(2)}</div>
+                <div>Title: ${notif.title}</div>
+                <div class="mt-3 d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="handlePay(${index}, ${parseFloat(notif.amount).toFixed(2)})">
+                        Pay ₹${parseFloat(notif.amount).toFixed(2)}
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="handleDecline(${index})">
+                        Decline
+                    </button>
+                </div>
             </div>
         </div>
     `).join('');

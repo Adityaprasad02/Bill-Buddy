@@ -4,89 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0"/>
     <title>User Dashboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
-        .hidden { display: none !important; }
-        h2, h3 { color: #333; }
-        .message { 
-            padding: 12px; margin: 15px 0; border-radius: 6px; font-weight: 500;
-        }
-        .success-msg { background: #e8f5e9; color: #2e7d32; }
-        .warning-msg { background: #fff3e0; color: #ef6c00; }
-        section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
-        form { max-width: 500px; }
-        label { display: block; margin: 8px 0 4px; font-weight: 600; }
-        input, select { 
-            width: 100%; padding: 10px; margin-bottom: 12px; box-sizing: border-box; 
-            border: 1px solid #ccc; border-radius: 4px; font-size: 1rem;
-        }
-        button { 
-            padding: 12px 24px; background: #1976d2; color: white; border: none; 
-            border-radius: 4px; cursor: pointer; margin-right: 10px; font-size: 1rem;
-        }
-        button:hover { background: #1565c0; }
-        .send-btn { background: #4caf50; }
-        .send-btn:hover { background: #388e3c; }
-        pre { 
-            background: #f0f8ff; padding: 16px; border: 1px solid #bbdefb; 
-            border-radius: 6px; white-space: pre-wrap; font-family: monospace; overflow-x: auto;
-        }
-        #error { color: #d32f2f; font-weight: bold; min-height: 24px; }
-        .notifications-container { max-width: 900px; }
-        .notification-item {
-            background: #fff; border-left: 4px solid #1976d2; padding: 16px;
-            margin: 12px 0; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .notification-header { font-weight: 600; color: #333; margin-bottom: 8px; }
-        .notification-details { 
-            font-size: 0.95rem; color: #666; margin: 8px 0;
-            line-height: 1.6;
-        }
-        .notification-actions {
-            display: flex; gap: 10px; margin-top: 12px;
-        }
-        .pay-btn {
-            background: #4caf50; flex: 1;
-        }
-        .pay-btn:hover { background: #388e3c; }
-        .decline-btn {
-            background: #f44336; flex: 1;
-        }
-        .decline-btn:hover { background: #d32f2f; }
-        button:disabled {
-            background: #ccc; cursor: not-allowed; opacity: 0.6;
-        }
-        button:disabled:hover {
-            background: #ccc;
-        }
-        .notification-subsection {
-            margin-bottom: 30px; padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #e0e0e0;
-        }
-        .subsection-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 16px; border-bottom: 2px solid #1976d2; padding-bottom: 10px; }
-        #notificationsList {
-            max-height: 600px; overflow-y: auto;
-        }
-        .empty-state {
-            text-align: center; color: #999; padding: 30px 20px; font-style: italic;
-        }
-    </style>
+    <!-- #18CHANGE: Use Bootstrap for layout and styles -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js" integrity="sha512-iKDtgDyTHjAitUDdLljGhenhPwrbBfqTKWO1mkhSFH3A7blITC9MhYon6SjnMhp4o0rADGw9yAC6EW4t5a4K3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js" integrity="sha512-1QvjE7BtotQjkq8PxLeF6P46gEpBRXuskzIVgjFpekzFVF4yjRgrQvTG1MTOJ3yQgvTteKAcO7DSZI92+u/yZw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
+<div class="container py-4">
+    <h2 class="mb-4">User Dashboard</h2>
 
-<h2>User Dashboard</h2>
-
-<div id="data"></div>
-<p id="error"></p>
+    <div id="data" class="mb-2"></div>
+    <p id="error" class="text-danger fw-semibold mb-3"></p>
 
 <!-- Main Merchant-aware section -->
-<div id="merchant-section" class="hidden">
+<div id="merchant-section" class="d-none">
 
     <!-- Already registered merchant view -->
-    <div id="already-merchant" class="hidden">
-        <div class="message success-msg">
+    <div id="already-merchant" class="d-none">
+        <div class="alert alert-success">
             You are already registered as a Merchant ✓
         </div>
         <div class="merchant-display">
@@ -95,114 +31,139 @@
         </div>
 
         <!-- Bill Creation (only visible when merchant exists) -->
-        <section id="bill-section">
-            <h3>Create Bill for Customer</h3>
+        <section id="bill-section" class="card mt-3">
+            <div class="card-body">
+            <h3 class="card-title h5">Create Bill for Customer</h3>
             <form id="createBillForm">
-                <label>Customer ID:</label>
-                <input type="number" name="customerId" placeholder="e.g. 123" required min="1" />
+                <label class="form-label">Customer ID:</label>
+                <input class="form-control" type="number" name="customerId" placeholder="e.g. 123" required min="1" />
 
-                <label>Amount (₹):</label>
-                <input type="number" name="amount" step="0.01" placeholder="500.00" required min="0.01" />
+                <label class="form-label">Amount (₹):</label>
+                <input class="form-control" type="number" name="amount" step="0.01" placeholder="500.00" required min="0.01" />
 
-                <label>Title:</label>
-                <input type="text" name="title" placeholder="Monthly Subscription / Order Payment" required />
+                <label class="form-label">Title:</label>
+                <input class="form-control" type="text" name="title" placeholder="Monthly Subscription / Order Payment" required />
 
-                <label>Bill Location (optional):</label>
-                <input type="text" name="billLocation" placeholder="Jaipur Store / Online Order #45" />
+                <label class="form-label">Bill Location (optional):</label>
+                <input class="form-control" type="text" name="billLocation" placeholder="Jaipur Store / Online Order #45" />
 
-                <label>Payment Mode:</label>
-                <select name="mode" required>
+                <label class="form-label">Payment Mode:</label>
+                <select class="form-select" name="mode" required>
                     <option value="">Select Mode</option>
                     <option value="ONLINE">ONLINE</option>
                     <option value="CASH">CASH</option>
                 </select>
 
-                <label>Payment Status:</label>
-                <select name="status" required>
+                <label class="form-label">Payment Status:</label>
+                <select class="form-select" name="status" required>
                     <option value="">Select Status</option>
                     <option value="PAID">PAID</option>
                     <option value="PENDING">PENDING</option>
-                    <option value="DECLINED">DECLINED</option>
-                    <option value="FAILED">FAILED</option>
                 </select>
 
-                <div style="margin-top: 16px;">
-                    <button type="submit">Generate Bill</button>
+                <div class="mt-3">
+                    <button class="btn btn-primary" type="submit">Generate Bill</button>
                 </div>
             </form>
-
-            <div id="billResult" style="margin-top: 24px;"></div>
+            <div id="billResult" class="mt-3"></div>
+            </div>
         </section>
     </div>
 
     <!-- Not yet merchant → show registration form -->
-    <div id="not-merchant" class="hidden">
-        <div class="message warning-msg" id="merchant-message">
+    <div id="not-merchant" class="d-none">
+        <div class="alert alert-warning" id="merchant-message">
             Not registered as merchant yet. Please register below.
         </div>
 
         <form id="registermerchant">
-            <label>Business Name:</label>
-            <input name="businessName" placeholder="Business Name" type="text" required />
+            <label class="form-label">Business Name:</label>
+            <input class="form-control" name="businessName" placeholder="Business Name" type="text" required />
 
-            <label>Merchant Type:</label>
-            <select name="type" required>
+            <label class="form-label">Merchant Type:</label>
+            <select class="form-select" name="type" required>
                 <option>SELECT ONLINE/OFFLINE</option>
                 <option value="ONLINE">Online</option>
                 <option value="OFFLINE">Offline</option>
             </select>
 
-            <label>Address:</label>
-            <input name="address" placeholder="Full Address" type="text" required />
+            <label class="form-label">Address:</label>
+            <input class="form-control" name="address" placeholder="Full Address" type="text" required />
 
-            <label>GST Number:</label>
-            <input name="gstNumber" placeholder="Ex - AAACM3025E1ZZ" type="text" required />
+            <label class="form-label">GST Number:</label>
+            <input class="form-control" name="gstNumber" placeholder="Ex - AAACM3025E1ZZ" type="text" required />
 
-            <button type="submit">Register as Merchant</button>
+            <button class="btn btn-primary" type="submit">Register as Merchant</button>
         </form>
 
-        <div id="resultdiv" style="margin-top: 24px;"></div>
+        <div id="resultdiv" class="mt-3"></div>
     </div>
 </div>
 
 <!-- Notifications Section -->
-<section id="notifications-section" class="notifications-container">
+<section id="notifications-section" class="mt-4">
     <!-- Merchant Section -->
-    <div id="merchant-bills-section" class="hidden">
-        <h3>📬 Bill Management</h3>
+    <div id="merchant-bills-section" class="d-none">
+        <h3 class="h5 mb-3">📬 Bill Management</h3>
         
         <!-- Send Bill Subsection -->
-        <div class="notification-subsection">
-            <div class="subsection-title">📤 Send Bill to Customer</div>
+        <div class="card mb-3">
+            <div class="card-header">📤 Send Bill to Customer</div>
+            <div class="card-body">
             <div id="sendBillList">
-                <div class="empty-state">Generate a bill first to send it to customer</div>
+                <div class="text-muted text-center py-3">Generate a bill first to send it to customer</div>
+            </div>
+            </div>
+        </div>
+
+        <!-- #18CHANGE: All merchant bills with resend option -->
+        <div class="card mb-3">
+            <div class="card-header">📚 All Bills</div>
+            <div class="card-body">
+                <div id="merchantAllBillsList">
+                    <div class="text-muted text-center py-3">No bills found</div>
+                </div>
             </div>
         </div>
 
         <!-- Receive Customer Response Subsection -->
-        <div class="notification-subsection">
-            <div class="subsection-title">📥 Customer Bill Response</div>
+        <div class="card mb-3">
+            <div class="card-header">📥 Customer Bill Response</div>
+            <div class="card-body">
             <div id="receiveBillList">
-                <div class="empty-state">No responses from customers yet</div>
+                <div class="text-muted text-center py-3">No responses from customers yet</div>
+            </div>
             </div>
         </div>
     </div>
 
     <!-- Customer Section -->
-    <div id="customer-bills-section" class="hidden">
-        <h3>📬 My Bills</h3>
+    <div id="customer-bills-section" class="d-none">
+        <h3 class="h5 mb-3">📬 My Bills</h3>
         
         <!-- Receive Bills Subsection -->
-        <div class="notification-subsection">
-            <div class="subsection-title">💸 Received Bills</div>
+        <div class="card mb-3">
+            <div class="card-header">💸 Received Bills</div>
+            <div class="card-body">
             <div id="customerBillsList">
-                <div class="empty-state">No bills received yet</div>
+                <div class="text-muted text-center py-3">No bills received yet</div>
+            </div>
+            </div>
+        </div>
+
+        <!-- #18CHANGE: Customer reacted bills -->
+        <div class="card mb-3">
+            <div class="card-header">✅ Reacted Bills</div>
+            <div class="card-body">
+                <div id="customerReactedBillsList">
+                    <div class="text-muted text-center py-3">No reacted bills yet</div>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<button onclick="logout()" style="margin-top: 30px; background: #d32f2f;">Logout</button>
+<button class="btn btn-danger mt-3" onclick="logout()">Logout</button>
 
 <script>
     // DOM elements
@@ -218,9 +179,14 @@
     const merchantBillsSection = document.getElementById("merchant-bills-section");
     const customerBillsSection = document.getElementById("customer-bills-section");
     const customerBillsList = document.getElementById("customerBillsList");
+    const customerReactedBillsList = document.getElementById("customerReactedBillsList");
+    const merchantAllBillsList = document.getElementById("merchantAllBillsList");
     
     let generatedBills = {}; // Track generated bills for sending
     let currentUserRole = null; // Store current user role
+    let currentUser = null; // Store current user
+    let merchantDetails = null; // Store merchant details
+    let billPayloadCache = {}; // #18CHANGE: billId -> SendBillNotification payload
 
     async function loadUserAndCheckMerchant() {
         try {
@@ -228,6 +194,7 @@
             if (!userRes.ok) throw new Error("Session expired or unauthorized");
 
             const user = await userRes.json();
+            currentUser = user;
              
             
             document.getElementById("data").innerHTML = `
@@ -247,24 +214,27 @@
 
             if (role === "CUSTOMER") {
                 
-                merchantSection.classList.add("hidden");
-                merchantBillsSection.classList.add("hidden");
-                customerBillsSection.classList.remove("hidden");
+                merchantSection.classList.add("d-none");
+                merchantBillsSection.classList.add("d-none");
+                customerBillsSection.classList.remove("d-none");
+                startCustomerBillRefresh();
                 return;
             }
 
-            merchantSection.classList.remove("hidden");
-            merchantBillsSection.classList.remove("hidden");
-            customerBillsSection.classList.add("hidden");
+            merchantSection.classList.remove("d-none");
+            merchantBillsSection.classList.remove("d-none");
+            customerBillsSection.classList.add("d-none");
 
             const merchantRes = await fetch("/merchant/getDetails", { credentials: "include" });
 
             if (merchantRes.ok) {
                 const merchantData = await merchantRes.json();
 
-                alreadyMerchant.classList.remove("hidden");
-                notMerchant.classList.add("hidden");
+                alreadyMerchant.classList.remove("d-none");
+                notMerchant.classList.add("d-none");
                 billResult.innerHTML = ""; // clear previous
+                merchantDetails = merchantData;
+                startMerchantBillRefresh();
 
                 merchantDisplay.innerHTML = `
                     <h3>Merchant Details</h3>
@@ -275,8 +245,8 @@
                 const msg = errData.message || "Merchant profile not found";
 
                 merchantMessage.innerText = `Not available — ${msg}. Please register as merchant.`;
-                notMerchant.classList.remove("hidden");
-                alreadyMerchant.classList.add("hidden");
+                notMerchant.classList.remove("d-none");
+                alreadyMerchant.classList.add("d-none");
             }
 
 
@@ -301,7 +271,7 @@
         };
 
         if (!data.businessName || !data.type || !data.address || !data.gstNumber) {
-            resultDiv.innerHTML = '<p style="color:red;">Please fill all fields</p>';
+            resultDiv.innerHTML = '<div class="alert alert-danger">Please fill all fields</div>';
             return;
         }
 
@@ -324,8 +294,8 @@
 
             const result = await res.json();
             resultDiv.innerHTML = `
-                <h3 style="color:green">Registered Successfully!</h3>
-                <pre>${JSON.stringify(result, null, 2)}</pre>
+                <div class="alert alert-success">Registered Successfully!</div>
+                <pre class="bg-light p-3 border rounded">${JSON.stringify(result, null, 2)}</pre>
             `;
 
             setTimeout(() => {
@@ -334,12 +304,143 @@
             }, 5000);
 
         } catch (err) {
-            resultDiv.innerHTML = `<p style="color:red;">Failed: ${err.message}</p>`;
+            resultDiv.innerHTML = `<div class="alert alert-danger">Failed: ${err.message}</div>`;
             console.error(err);
         }
     });
     
     var sendBillPayload = null  ; 
+    let customerRefreshInterval = null;
+    let merchantRefreshInterval = null;
+
+    function getStatusBadgeClass(status) {
+        if (status === "PAID" || status === "TXN_SUCCESS") return "badge text-bg-success";
+        if (status === "FAILED" || status === "DECLINED" || status === "TXN_FAILURE") return "badge text-bg-danger";
+        if (status === "PENDING") return "badge text-bg-warning";
+        return "badge text-bg-secondary";
+    }
+
+    function isReactedStatus(status) {
+        return status && status !== "PENDING";
+    }
+
+    // #18CHANGE: Fetch and render bills for customer
+    async function refreshCustomerBills() {
+        if (!currentUser?.id) return;
+        try {
+            const resp = await fetch(`/customer/fetch/bill/${currentUser.id}`, { credentials: "include" });
+            if (!resp.ok) throw new Error(`Failed to load bills: ${resp.status}`);
+            const bills = await resp.json();
+            renderCustomerReactedBills(Array.isArray(bills) ? bills : []);
+        } catch (err) {
+            console.error("Failed to refresh customer bills:", err);
+        }
+    }
+
+    function renderCustomerReactedBills(bills) {
+        if (!customerReactedBillsList) return;
+        const reacted = bills.filter(b => isReactedStatus(b.billStatus));
+        if (reacted.length === 0) {
+            customerReactedBillsList.innerHTML = '<div class="text-muted text-center py-3">No reacted bills yet</div>';
+            return;
+        }
+        customerReactedBillsList.innerHTML = reacted.map((bill) => `
+            <div class="card mb-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fw-semibold">${bill.billTitle}</div>
+                            <div class="text-muted">Bill ID: ${bill.billId}</div>
+                        </div>
+                        <span class="${getStatusBadgeClass(bill.billStatus)}">${bill.billStatus}</span>
+                    </div>
+                    <div class="mt-2">Amount: ₹${parseFloat(bill.billAmount).toFixed(2)}</div>
+                    <div class="text-muted">Mode: ${bill.paymentMode}</div>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    function startCustomerBillRefresh() {
+        refreshCustomerBills();
+        if (customerRefreshInterval) return;
+        customerRefreshInterval = setInterval(refreshCustomerBills, 10000);
+    }
+
+    // #18CHANGE: Fetch and render bills for merchant
+    async function refreshMerchantBills() {
+        if (!merchantDetails?.merchantId) return;
+        try {
+            const resp = await fetch(`/merchant/fetch/bill/${merchantDetails.merchantId}`, { credentials: "include" });
+
+            if (resp.redirected && resp.url.includes("/login")) {
+                window.location.href = "/login.html";
+                return;
+            }
+
+            if (!resp.ok) throw new Error(`Failed to load bills: ${resp.status}`);
+
+            const bills = await resp.json();
+            renderMerchantAllBills(Array.isArray(bills) ? bills : []);
+        } catch (err) {
+            console.error("Failed to refresh merchant bills:", err);
+        }
+    }
+
+    function renderMerchantAllBills(bills) {
+        if (!merchantAllBillsList) return;
+        if (bills.length === 0) {
+            merchantAllBillsList.innerHTML = '<div class="text-muted text-center py-3">No bills found</div>';
+            return;
+        }
+        merchantAllBillsList.innerHTML = bills.map((bill) => {
+            const canResend = bill.billStatus !== "PAID";
+            const hasPayload = !!billPayloadCache[bill.billId];
+            const btnClass = canResend ? "btn btn-outline-primary btn-sm" : "btn btn-outline-secondary btn-sm";
+            const btnLabel = canResend ? "Resend" : "Paid";
+            const disabledAttr = canResend && hasPayload ? "" : "disabled";
+            const helperText = !hasPayload && canResend ? "<div class=\"text-muted small\">Resend needs bill details from this session</div>" : "";
+            return `
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-semibold">${bill.billTitle}</div>
+                                <div class="text-muted">Bill ID: ${bill.billId}</div>
+                            </div>
+                            <span class="${getStatusBadgeClass(bill.billStatus)}">${bill.billStatus}</span>
+                        </div>
+                        <div class="mt-2">Amount: ₹${parseFloat(bill.billAmount).toFixed(2)}</div>
+                        <div class="text-muted">Mode: ${bill.paymentMode}</div>
+                        <div class="mt-2 d-flex align-items-center gap-2">
+                            <button class="${btnClass}" ${disabledAttr} onclick="resendBill(${bill.billId})" id="resend-btn-${bill.billId}">${btnLabel}</button>
+                            ${helperText}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("");
+    }
+
+    function startMerchantBillRefresh() {
+        refreshMerchantBills();
+        if (merchantRefreshInterval) return;
+        merchantRefreshInterval = setInterval(refreshMerchantBills, 10000);
+    }
+
+    // #18CHANGE: Resend bill if not paid and payload exists
+    function resendBill(billId) {
+        const bill = billPayloadCache[billId];
+        if (!bill) return;
+        const resendBtn = document.getElementById(`resend-btn-${billId}`);
+        if (!resendBtn) return;
+        if (resendBtn) {
+            resendBtn.disabled = true;
+            resendBtn.innerText = "Sending...";
+        }
+        sendBill(bill, resendBtn);
+        setTimeout(() => refreshMerchantBills(), 1500);
+    }
     // Create Bill
     document.getElementById("createBillForm")?.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -356,7 +457,7 @@
         };
 
         if (!customerId || isNaN(customerId) || !data.amount || !data.title || !data.mode || !data.status) {
-            billResult.innerHTML = '<p style="color:red;">Please fill all required fields correctly</p>';
+            billResult.innerHTML = '<div class="alert alert-danger">Please fill all required fields correctly</div>';
             return;
         }
 
@@ -391,8 +492,8 @@
             }
 
             billResult.innerHTML = `
-                <h3 style="color:green">Bill Generated Successfully!</h3>
-                <pre>${JSON.stringify(billData, null, 2)}</pre>
+                <div class="alert alert-success">Bill Generated Successfully!</div>
+                <pre class="bg-light p-3 border rounded">${JSON.stringify(billData, null, 2)}</pre>
             `;
 
             // Add bill to the "Send Bill" section
@@ -401,7 +502,7 @@
             form.reset();
 
         } catch (err) {
-            billResult.innerHTML = `<p style="color:red;">Failed: ${err.message}</p>`;
+            billResult.innerHTML = `<div class="alert alert-danger">Failed: ${err.message}</div>`;
             console.error(err);
         }
     });
@@ -411,30 +512,32 @@
         
         // Store bill data
         generatedBills[billId] = sendBillPayload ; 
+        billPayloadCache[billId] = sendBillPayload; // #18CHANGE
 
         // Create UI element
         const billElement = document.createElement("div");
-        billElement.className = "notification-item";
+        billElement.className = "card mb-2";
         billElement.id = `send-bill-${billId}`;
         const showSendBtn = billData.status !== "PAID";
 
     
         billElement.innerHTML = `
-            <div class="notification-header">
-                📋 ${billData.billMerchantDetails.merchantName} → ${billData.billCustomerDetails.customerName}
-            </div>
+            <div class="card-body">
+                <div class="fw-semibold">
+                    📋 ${billData.billMerchantDetails.merchantName} → ${billData.billCustomerDetails.customerName}
+                </div>
 
-            <div class="notification-details">
-                <p><b>Bill ID:</b> ${billId}</p>
-                <p><b>Title:</b> ${billData.title}</p>
-                <p><b>Amount:</b> ₹${billData.amount}</p>
-                <p><b>Status:</b> ${billData.status}</p>
-            </div>
+                <div class="text-muted mt-1">
+                    Bill ID: ${billId}
+                </div>
+                <div class="mt-2">Title: ${billData.title}</div>
+                <div>Amount: ₹${billData.amount}</div>
+                <div>Status: <span class="${getStatusBadgeClass(billData.status)}">${billData.status}</span></div>
 
             ${
                 showSendBtn
-                    ? `<div class="notification-actions">
-                        <button class="send-btn"
+                    ? `<div class="mt-3">
+                        <button class="btn btn-success btn-sm"
                                 onclick="sendBillToCustomer(${billId})"
                                 id="send-btn-${billId}">
                             Send Bill
@@ -442,10 +545,11 @@
                     </div>`
                     : ``
             }
+            </div>
         `;
 
         // Clear empty state if exists
-        if (sendBillList.querySelector(".empty-state")) {
+        if (sendBillList.querySelector(".text-muted")) {
             sendBillList.innerHTML = "";
         }
 
@@ -491,26 +595,28 @@
         console.log('🔍 Looking for receiveBillList element...');
         if (!receiveBillList) {
             console.error('❌ CRITICAL: receiveBillList element NOT found!');
-            console.log('Current merchant bills section hidden?', merchantBillsSection?.classList.contains('hidden'));
+            console.log('Current merchant bills section hidden?', merchantBillsSection?.classList.contains('d-none'));
             return;
         }
         
         console.log('✅ receiveBillList element found');
         
         // Clear empty state if exists
-        const emptyState = receiveBillList.querySelector(".empty-state");
+        const emptyState = receiveBillList.querySelector(".text-muted");
         if (emptyState) {
             console.log('🗑️ Removing empty state element');
             receiveBillList.innerHTML = "";
         }
 
         const responseElement = document.createElement("div");
-        responseElement.className = "notification-item";
+        responseElement.className = "card mb-2";
         
         const statusColor = responseData.status === "TXN_SUCCESS" ? "#4caf50" : 
-                          responseData.status === "TXN_FAILURE" ? "#f44336" : "#ff9800";
-        
-        responseElement.style.borderLeftColor = statusColor;
+                  responseData.status === "TXN_FAILURE" ? "#f44336" : "#ff9800";
+        const statusBorderClass = responseData.status === "TXN_SUCCESS" ? "border-start border-4 border-success" :
+                  responseData.status === "TXN_FAILURE" ? "border-start border-4 border-danger" : "border-start border-4 border-warning";
+
+        responseElement.className = `card mb-2 ${statusBorderClass}`;
         responseElement.id = `response-${responseData.billId}-${Date.now()}`;
         
         console.log('📝 Creating response element with:');
@@ -520,22 +626,33 @@
         console.log('- Color:', statusColor);
         
         responseElement.innerHTML = `
-            <div class="notification-header" style="color: ${statusColor}">
-                💬 Response from ${responseData.customerName}
-                <div>Customer id : ${responseData.customerId}</div>
-            </div>
-            <div class="notification-details">
-                <p><b>Merchant ID:</b> ${responseData.merchantId}</p>
-                <p><b>Merchant Name:</b> ${responseData.merchantName}</p>
-                <p><b>Bill ID:</b> ${responseData.billId}</p>
-                <p><b>Bill Title:</b> ${responseData.title}</p>
-                <p><b>Amount:</b> ₹${responseData.amount ? parseFloat(responseData.amount).toFixed(2) : 'N/A'}</p>
-                <p><b>Status:</b> <span style="color: ${statusColor}; font-weight: bold;">${responseData.status}</span></p>
-                <p><b>Received:</b> ${new Date().toLocaleString()}</p>
+            <div class="card-body">
+                <div class="fw-semibold">
+                    💬 Response from ${responseData.customerName}
+                </div>
+                <div class="text-muted">Customer ID: ${responseData.customerId}</div>
+                <div class="mt-2">Merchant Name: ${responseData.merchantName}</div>
+                <div>Bill ID: ${responseData.billId}</div>
+                <div>Bill Title: ${responseData.title}</div>
+                <div>Amount: ₹${responseData.amount ? parseFloat(responseData.amount).toFixed(2) : 'N/A'}</div>
+                <div>Status: <span class="${getStatusBadgeClass(responseData.status)}">${responseData.status}</span></div>
+                <div class="text-muted">Received: ${new Date().toLocaleString()}</div>
             </div>
         `;
 
         receiveBillList.insertAdjacentElement("afterbegin", responseElement);
+        if (merchantDetails?.merchantUserName) {
+            billPayloadCache[responseData.billId] = {
+                customerName: responseData.customerName,
+                billId: responseData.billId,
+                title: responseData.title,
+                amount: responseData.amount,
+                merchantName: responseData.merchantName,
+                merchantUserName: merchantDetails.merchantUserName,
+                merchantId: responseData.merchantId,
+                customerId: responseData.customerId
+            };
+        }
         console.log('✅ Response element inserted into receiveBillList');
         console.log('Current items in receiveBillList:', receiveBillList.children.length);
         console.log('====== END ADD CUSTOMER RESPONSE ======');
@@ -544,10 +661,15 @@
     // Make function globally available for WebSocket messages
     window.addCustomerResponse = addCustomerResponse;
     window.sendBillToCustomer = sendBillToCustomer;
+    window.refreshCustomerBills = refreshCustomerBills;
+    window.refreshMerchantBills = refreshMerchantBills;
+    window.resendBill = resendBill;
 
     // Load page
     loadUserAndCheckMerchant();
 </script>
+<!-- #18CHANGE: Close Bootstrap container -->
+</div>
 <script src="socket.js"></script>
 </body>
 </html>

@@ -9,10 +9,7 @@ import com.company.Bill_Bridge.model.User;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestBillCreation;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestMerchantRegister;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestUserRegister;
-import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseBillGenerated;
-import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseGetMerchantDetails;
-import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseMerchantRegister;
-import com.company.Bill_Bridge.model.dtos.ResponseDtos.ResponseUserRegistration;
+import com.company.Bill_Bridge.model.dtos.ResponseDtos.*;
 import com.company.Bill_Bridge.model.enums.Role;
 import com.company.Bill_Bridge.service.UserService;
 import jakarta.validation.Valid;
@@ -25,6 +22,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -96,6 +94,18 @@ public class ControllerBill {
                                                @PathVariable("status") String status) {
 
         return new ResponseEntity<>(userService.updateBillStatus(billId , status) , HttpStatus.OK);
+    }
+
+    @GetMapping("/customer/fetch/bill/{customer_id}")
+    public  ResponseEntity<List<FetchAllBills>> getCustomerListBills(@PathVariable Long customer_id){
+        var allBills = userService.customerGetAllBills(customer_id);
+        return new ResponseEntity<>(allBills , HttpStatus.OK);
+    }
+
+    @GetMapping("/merchant/fetch/bill/{merchant_id}")
+    public ResponseEntity<List<FetchAllBills>> getMerchantListBills(@PathVariable UUID merchant_id){
+        var allBills = userService.merchantGetAllBills(merchant_id) ;
+        return new ResponseEntity<>(allBills , HttpStatus.OK);
     }
     
 

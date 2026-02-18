@@ -12,7 +12,7 @@ import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestMerchantRegister;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestUserRegister;
 import com.company.Bill_Bridge.model.dtos.ResponseDtos.*;
 import com.company.Bill_Bridge.model.enums.*;
-
+import com.company.Bill_Bridge.model.dtos.ResponseDtos.FetchAllBills;
 import com.company.Bill_Bridge.repository.BillRepository;
 import com.company.Bill_Bridge.repository.MerchantRepository;
 import com.company.Bill_Bridge.repository.PaymentDetailsRepository;
@@ -24,10 +24,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -43,7 +42,7 @@ public class UserService {
 
     @Autowired
      private PaymentDetailsRepository paymentDetailsRepository ;
-
+    
 
     @Autowired
     private BCryptPasswordEncoder encoder ;
@@ -210,7 +209,8 @@ public class UserService {
     }
 
     public ResponseGetMerchantDetails getMerchantDetails(User merchantUser) throws DBException {
-        Merchant merchant =  merchantRepository.findByUserId(merchantUser.getId()).orElseThrow(() -> new DBException("user with merchant with user id : " + merchantUser.getId() +
+        Merchant merchant =  merchantRepository.findByUserId(merchantUser.getId())
+                .orElseThrow(() -> new DBException("user with merchant with user id : " + merchantUser.getId() +
                 "doesn't exist"));
         return new ResponseGetMerchantDetails(merchant.getMerchantId(),
                 merchant.getBusinessName(),
@@ -230,5 +230,32 @@ public class UserService {
         bill.setStatus(PaymentStatus.fromGateway(status));
         return billRepository.save(bill) ;
 
+    }
+
+    public List<FetchAllBills> customerGetAllBills(Long customerId) {
+        List<Bill> listOfBills = billRepository.findAllByUser_IdOrderByCreatedAtDesc(customerId) ;
+
+        var allBills = getFetchAllBills(listOfBills);
+
+        return allBills;
+    }
+
+    public List<FetchAllBills> merchantGetAllBills(UUID merchantId){
+        List<Bill> listOfBills = billRepository.findAllByMerchant_MerchantIdOrderByCreatedAtDesc(merchantId) ;
+
+        var allBills = getFetchAllBills(listOfBills);
+
+        return allBills;
+    }
+
+    private List<FetchAllBills> getFetchAllBills(List<Bill> listOfBills) {
+        List<FetchAllBills> allBills = new ArrayList<>() ;
+
+        for(Bill bill : listOfBills){
+            FetchAllBills fetchAllBills = new FetchAllBills(bill.getBillId(), bill.getAmount(),
+                    bill.getMode(), bill.getStatus(), bill.getTitle());
+            allBills.add(fetchAllBills) ; 
+        }
+        return allBills;
     }
 }
