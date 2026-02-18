@@ -3,6 +3,8 @@ package com.company.Bill_Bridge.controller;
 
 import com.company.Bill_Bridge.exceptions.DBException;
 import com.company.Bill_Bridge.exceptions.DenialException;
+import com.company.Bill_Bridge.model.Bill;
+import com.company.Bill_Bridge.model.PaymentDetails;
 import com.company.Bill_Bridge.model.User;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestBillCreation;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestMerchantRegister;
@@ -17,12 +19,17 @@ import jakarta.validation.Valid;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @Slf4j
 @RestController
@@ -78,6 +85,19 @@ public class ControllerBill {
           return ResponseEntity.ok(userService.getMerchantDetails(merchantUser)) ;
     }
 
+
+    @PostMapping("/merchant/save/payment/data/{billId}")
+    public ResponseEntity<PaymentDetails> savePaymentDetails(@RequestBody Map<String,Object> paymentData , @PathVariable("billId") Long billId) {
+        return new ResponseEntity<>(userService.savePaymentDetails(paymentData, billId), HttpStatus.OK) ;
+    }
+
+    @PutMapping("/merchant/update/bill/status/{billId}/{status}")
+    public ResponseEntity<Bill> updateBill(@PathVariable("billId") Long billId ,
+                                               @PathVariable("status") String status) {
+
+        return new ResponseEntity<>(userService.updateBillStatus(billId , status) , HttpStatus.OK);
+    }
+    
 
 
 

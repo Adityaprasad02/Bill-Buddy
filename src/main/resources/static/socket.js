@@ -195,8 +195,8 @@ async function handleCustomerPay(index) {
             
         } catch (err) {
             console.error(' FETCH ERROR - Failed to initiate payment:', err);
-            console.error('Error message:', err.message);
-            alert(' Payment initiation failed: ' + err.message);
+            console.error('Error message:', err.error);
+            alert(' Payment initiation failed: ' + err.error);
             return;
         }
     }
@@ -278,7 +278,7 @@ async function handleCustomerPay(index) {
               
             }).catch(err => {
                 console.error('Payment verification error:', err);
-                 alert('Payment verification failed: ' + err.message);
+                 alert('Payment verification failed: ' + err.error);
             });
          }   
 }
@@ -336,9 +336,9 @@ function sendPaymentAction(bill, index , data) {
             
         } catch (err) {
             console.error('❌ SEND ERROR - Failed to send payment response:', err);
-            console.error('Error message:', err.message);
+            console.error('Error message:', err.error);
             console.error('Error stack:', err.stack);
-            alert('❌ Failed to send payment confirmation: ' + err.message);
+            alert('❌ Failed to send payment confirmation: ' + err.error);
         }
     } else {
         console.error('❌ WEBSOCKET NOT CONNECTED!');
@@ -429,9 +429,9 @@ function sendPaymentAction(bill, index , data) {
                 
 //             } catch (err) {
 //                 console.error('❌ SEND ERROR - Failed to send decline response:', err);
-//                 console.error('Error message:', err.message);
+//                 console.error('Error message:', err.error);
 //                 console.error('Error stack:', err.stack);
-//                 alert('❌ Failed to send decline confirmation: ' + err.message);
+//                 alert('❌ Failed to send decline confirmation: ' + err.error);
 //                 return;
 //             }
 //         } else {
@@ -468,15 +468,16 @@ function handleMerchantNotification(notification) {
      const paymentResponse = notification.paymentResponse ;
 
      // an endpoint for saving the paymentData in database
-
-     // an endpoint for updating the bill status in database 
+        savePaymentDatabyMerchant(paymentData , paymentResponse.billId) ;
+     // an endpoint for updating the bill status in database
+        updateBillByMerchant(paymentResponse.billId , paymentResponse.status) ;
     
     // Verify addCustomerResponse function exists
     if (typeof addCustomerResponse === 'function') {
         try {
             addCustomerResponse(paymentResponse);
         } catch (err) {
-            console.error('Error details:', err.message);
+            console.error('Error details:', err.error);
             console.error('Stack:', err.stack);
         }
     } else {
@@ -485,9 +486,44 @@ function handleMerchantNotification(notification) {
     
     // Also store in notifications array
     notifications.push(paymentResponse);
-    console.log('🏪 ========================================================');
+    //console.log('🏪 ========================================================');
 }
 
+savePaymentDatabyMerchant = async (paymentData , billId) => {
+    try {
+        const resp = await fetch(`/merchant/save/payment/data/${billId}`, {    
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(paymentData)
+        });
+        if (!resp.ok) {
+            throw new Error(`Failed to save payment data with status ${resp.status}`);
+        }   
+        const data = await resp.json();
+        //console.log('Payment data saved successfully:', data);
+    }   
+    catch (err) {
+        console.error('Error saving payment data:', err.error);
+    }   
+}
+
+updateBillByMerchant = async (billId , status) => {
+    try {
+        const resp = await fetch(`/merchant/update/bill/status/${billId}/${status}`, {
+            method: 'PUT', 
+        });
+        if (!resp.ok) {
+            throw new Error(`Failed to update bill status with status ${resp.status}`);
+        }
+        const data = await resp.json();
+       // console.log('Bill status updated successfully:', data);
+    }
+    catch (err) {
+        console.error('Error updating bill status:', err.error);
+    }               
+}   
 
 
 function renderNotifications() {

@@ -5,6 +5,7 @@ import com.company.Bill_Bridge.exceptions.DBException;
 import com.company.Bill_Bridge.exceptions.DenialException;
 import com.company.Bill_Bridge.model.Bill;
 import com.company.Bill_Bridge.model.Merchant;
+import com.company.Bill_Bridge.model.PaymentDetails;
 import com.company.Bill_Bridge.model.User;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestBillCreation;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestMerchantRegister;
@@ -14,15 +15,21 @@ import com.company.Bill_Bridge.model.enums.*;
 
 import com.company.Bill_Bridge.repository.BillRepository;
 import com.company.Bill_Bridge.repository.MerchantRepository;
+import com.company.Bill_Bridge.repository.PaymentDetailsRepository;
 import com.company.Bill_Bridge.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
-
+@Slf4j
 @Service
 public class UserService {
     @Autowired
@@ -33,6 +40,9 @@ public class UserService {
 
     @Autowired
     private BillRepository billRepository ;
+
+    @Autowired
+     private PaymentDetailsRepository paymentDetailsRepository ;
 
 
     @Autowired
@@ -149,6 +159,43 @@ public class UserService {
 
 
 
+    public PaymentDetails savePaymentDetails(Map<String, Object> paymentData, Long billId) {
+
+        PaymentDetails paymentDetails = new PaymentDetails() ;
+        Bill bill = null ;
+        try {
+            bill =  billRepository.findByBillId(billId) ;
+        } catch (Exception e) {
+            throw new DBException("bill not found with id : " + billId);
+        }
+        var data =  paymentData.get("body") ; // get the Object
+        Map<String,Object> dataMap = (Map<String, Object>) data ; // the body field is also a json
+
+
+        paymentDetails.setTxnId(dataMap.get("txnId").toString());
+        paymentDetails.setBill(bill);
+        paymentDetails.setBankTxnId(dataMap.get("bankTxnId").toString());
+        paymentDetails.setOrderId(dataMap.get("orderId").toString());
+        paymentDetails.setTxnAmount( new BigDecimal(dataMap.get("txnAmount").toString()));
+        paymentDetails.setTxnType(dataMap.get("txnType").toString());
+        paymentDetails.setGatewayName(dataMap.get("gatewayName").toString());
+        paymentDetails.setBankName(dataMap.get("bankName").toString());
+        var refundAmt = dataMap.get("refundAmt");
+        paymentDetails.setRefundAmt(refundAmt==null ? null  : new BigDecimal(refundAmt.toString()));
+
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+
+        paymentDetails.setTxnDate( LocalDateTime.parse(dataMap.get("txnDate").toString(),formatter) );
+
+
+        var save = paymentDetailsRepository.save(paymentDetails);
+
+        log.info("Payment details : {} " , save) ;
+
+        return save;
+    }
+
     public User getUserDetails(String username) throws DBException {
 
         User user = userRepository.findByUsername(username).orElseThrow(() -> new DBException("user with username : " + username +
@@ -169,4 +216,15 @@ public class UserService {
         );
     }
 
+    public Bill updateBillStatus(Long billId, String status) {
+        Bill bill = null ;
+        try {
+           bill =  billRepository.findByBillId(billId) ;
+        } catch (Exception e) {
+            throw new DBException("bill not found with id : " + billId);
+        }
+        bill.setStatus(PaymentStatus.fromGateway(status));
+        return billRepository.save(bill) ;
+
+    }
 }
