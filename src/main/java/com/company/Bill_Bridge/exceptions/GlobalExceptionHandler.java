@@ -40,7 +40,14 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .badRequest()
-                .body(Map.of("errors", errors));
+                .body(Map.of("error", errors));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<?> handleRuntimeExceptions(RuntimeException e) {          
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", e.getMessage()));
     }
 
 }

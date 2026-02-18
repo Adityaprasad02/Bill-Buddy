@@ -25,16 +25,19 @@ public class PaymentDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "txnId")
+    @Column(name = "txnId" , unique = true)
     private String TxnId ;
 
     @OneToOne( fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_bill"  , referencedColumnName = "billId" , nullable = false )
     private Bill bill ;
 
+    @Column(unique = true)
     private String bankTxnId ;
 
+    @Column(unique = true)
     private String orderId ;
+
 
     private BigDecimal txnAmount ;
 
@@ -48,5 +51,7 @@ public class PaymentDetails {
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.S")
     private LocalDateTime txnDate;
+
+    private String resultStatus ;
 
 }

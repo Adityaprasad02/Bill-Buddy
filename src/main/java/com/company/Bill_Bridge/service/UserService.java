@@ -168,18 +168,18 @@ public class UserService {
         } catch (Exception e) {
             throw new DBException("bill not found with id : " + billId);
         }
-        var data =  paymentData.get("body") ; // get the Object
+        Object data =  paymentData.get("body") ; // get the Object
         Map<String,Object> dataMap = (Map<String, Object>) data ; // the body field is also a json
 
 
-        paymentDetails.setTxnId(dataMap.get("txnId").toString());
+        paymentDetails.setTxnId(String.valueOf(dataMap.get("txnId")));
         paymentDetails.setBill(bill);
-        paymentDetails.setBankTxnId(dataMap.get("bankTxnId").toString());
-        paymentDetails.setOrderId(dataMap.get("orderId").toString());
-        paymentDetails.setTxnAmount( new BigDecimal(dataMap.get("txnAmount").toString()));
-        paymentDetails.setTxnType(dataMap.get("txnType").toString());
-        paymentDetails.setGatewayName(dataMap.get("gatewayName").toString());
-        paymentDetails.setBankName(dataMap.get("bankName").toString());
+        paymentDetails.setBankTxnId(String.valueOf(dataMap.get("bankTxnId")));
+        paymentDetails.setOrderId(String.valueOf(dataMap.get("orderId")));
+        paymentDetails.setTxnAmount( new BigDecimal(String.valueOf(dataMap.get("txnAmount"))));
+        paymentDetails.setTxnType(String.valueOf(dataMap.get("txnType")));
+        paymentDetails.setGatewayName(String.valueOf(dataMap.get("gatewayName")));
+        paymentDetails.setBankName(String.valueOf(dataMap.get("bankName")));
         var refundAmt = dataMap.get("refundAmt");
         paymentDetails.setRefundAmt(refundAmt==null ? null  : new BigDecimal(refundAmt.toString()));
 
@@ -187,6 +187,10 @@ public class UserService {
                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
 
         paymentDetails.setTxnDate( LocalDateTime.parse(dataMap.get("txnDate").toString(),formatter) );
+
+        Map<String,Object> resultInfo = (Map<String, Object>) dataMap.get("resultInfo");
+
+        paymentDetails.setResultStatus(resultInfo.get("resultStatus").toString());
 
 
         var save = paymentDetailsRepository.save(paymentDetails);

@@ -505,7 +505,7 @@ savePaymentDatabyMerchant = async (paymentData , billId) => {
         //console.log('Payment data saved successfully:', data);
     }   
     catch (err) {
-        console.error('Error saving payment data:', err.error);
+        console.error('Error saving payment data:', err);
     }   
 }
 
