@@ -157,7 +157,7 @@ public class UserService {
     }
 
 
-
+    @Transactional
     public PaymentDetails savePaymentDetails(Map<String, Object> paymentData, Long billId) {
 
         PaymentDetails paymentDetails = new PaymentDetails() ;
@@ -219,7 +219,8 @@ public class UserService {
                 merchant.getGstNumber()
         );
     }
-
+    
+    @Transactional
     public Bill updateBillStatus(Long billId, String status) {
         Bill bill = null ;
         try {

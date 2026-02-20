@@ -116,6 +116,28 @@
             </div>
         </div>
 
+        <!-- #21FEB: Upload bill PDF for saved bill -->
+        <div class="card mb-3">
+            <div class="card-header">📄 Upload Bill PDF</div>
+            <div class="card-body">
+                <form id="uploadBillForm" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label" for="uploadBillId">Bill ID</label>
+                        <input class="form-control" id="uploadBillId" name="billId" type="number" min="1" placeholder="e.g. 1201" required />
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label" for="uploadBillFile">Bill PDF</label>
+                        <input class="form-control" id="uploadBillFile" name="file" type="file" accept="application/pdf" required />
+                        <div class="form-text">Only PDF files are accepted. Max size depends on server limits.</div>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary" type="submit" id="uploadBillBtn">Upload Bill</button>
+                    </div>
+                </form>
+                <div id="uploadBillResult" class="mt-3"></div>
+            </div>
+        </div>
+
         <!-- #18CHANGE: All merchant bills with resend option -->
         <div class="card mb-3">
             <div class="card-header">📚 All Bills</div>
@@ -181,6 +203,10 @@
     const customerBillsList = document.getElementById("customerBillsList");
     const customerReactedBillsList = document.getElementById("customerReactedBillsList");
     const merchantAllBillsList = document.getElementById("merchantAllBillsList");
+    // #21FEB: Upload bill UI elements
+    const uploadBillForm = document.getElementById("uploadBillForm");
+    const uploadBillResult = document.getElementById("uploadBillResult");
+    const uploadBillBtn = document.getElementById("uploadBillBtn");
     
     let generatedBills = {}; // Track generated bills for sending
     let currentUserRole = null; // Store current user role
@@ -306,6 +332,74 @@
         } catch (err) {
             resultDiv.innerHTML = `<div class="alert alert-danger">Failed: ${err.message}</div>`;
             console.error(err);
+        }
+    });
+
+    // #21FEB: Upload bill PDF for an existing bill
+    uploadBillForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!uploadBillResult) return;
+
+        const billIdInput = document.getElementById("uploadBillId");
+        const fileInput = document.getElementById("uploadBillFile");
+        const billId = billIdInput?.value?.trim();
+        const file = fileInput?.files?.[0];
+
+        if (!billId || Number(billId) <= 0) {
+            uploadBillResult.innerHTML = '<div class="alert alert-danger">Please enter a valid Bill ID.</div>';
+            return;
+        }
+
+        if (!file) {
+            uploadBillResult.innerHTML = '<div class="alert alert-danger">Please select a PDF file.</div>';
+            return;
+        }
+
+        if (file.type !== "application/pdf") {
+            uploadBillResult.innerHTML = '<div class="alert alert-danger">Only PDF files are allowed.</div>';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        if (uploadBillBtn) {
+            uploadBillBtn.disabled = true;
+            uploadBillBtn.innerText = "Uploading...";
+        }
+        uploadBillResult.innerHTML = '<div class="text-muted">Uploading bill...</div>';
+
+        try {
+            const resp = await fetch(`/merchant/upload/bill/${encodeURIComponent(billId)}`, {
+                method: "POST",
+                credentials: "include",
+                body: formData
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                throw new Error(err.message || err.error || `Upload failed (${resp.status})`);
+            }
+
+            const result = await resp.json().catch(() => true);
+            if (result === true) {
+                uploadBillResult.innerHTML = '<div class="alert alert-success">Bill uploaded successfully.</div>';
+            } else {
+                uploadBillResult.innerHTML = '<div class="alert alert-success">Bill uploaded successfully.</div>';
+            }
+
+            uploadBillForm.reset();
+            if (typeof window.refreshMerchantBills === "function") {
+                window.refreshMerchantBills();
+            }
+        } catch (err) {
+            uploadBillResult.innerHTML = `<div class="alert alert-danger">Upload failed: ${err.message}</div>`;
+            console.error(err);
+        } finally {
+            if (uploadBillBtn) {
+                uploadBillBtn.disabled = false;
+                uploadBillBtn.innerText = "Upload Bill";
+            }
         }
     });
     
