@@ -161,12 +161,9 @@ public class UserService {
     public PaymentDetails savePaymentDetails(Map<String, Object> paymentData, Long billId) {
 
         PaymentDetails paymentDetails = new PaymentDetails() ;
-        Bill bill = null ;
-        try {
-            bill =  billRepository.findByBillId(billId) ;
-        } catch (Exception e) {
-            throw new DBException("bill not found with id : " + billId);
-        }
+        Bill bill =  billRepository.findByBillId(billId)
+                .orElseThrow(() -> new DBException("Bill not found with id : " + billId));
+
         Object data =  paymentData.get("body") ; // get the Object
         Map<String,Object> dataMap = (Map<String, Object>) data ; // the body field is also a json
 
@@ -222,12 +219,8 @@ public class UserService {
     
     @Transactional
     public Bill updateBillStatus(Long billId, String status) {
-        Bill bill = null ;
-        try {
-           bill =  billRepository.findByBillId(billId) ;
-        } catch (Exception e) {
-            throw new DBException("bill not found with id : " + billId);
-        }
+        Bill bill =  billRepository.findByBillId(billId)
+                .orElseThrow(() -> new DBException("Bill not found with id : " + billId));
         bill.setStatus(PaymentStatus.fromGateway(status));
         return billRepository.save(bill) ;
 
@@ -259,4 +252,6 @@ public class UserService {
         }
         return allBills;
     }
+
+
 }

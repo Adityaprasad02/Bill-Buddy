@@ -9,6 +9,93 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js" integrity="sha512-iKDtgDyTHjAitUDdLljGhenhPwrbBfqTKWO1mkhSFH3A7blITC9MhYon6SjnMhp4o0rADGw9yAC6EW4t5a4K3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js" integrity="sha512-1QvjE7BtotQjkq8PxLeF6P46gEpBRXuskzIVgjFpekzFVF4yjRgrQvTG1MTOJ3yQgvTteKAcO7DSZI92+u/yZw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        /* #21FEB: Modal styles for bill viewing */
+        .bill-viewer-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .bill-viewer-modal.active {
+            display: block;
+        }
+        .bill-viewer-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 900px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .bill-viewer-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bill-viewer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .bill-viewer-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            background-color: #f5f5f5;
+            border-radius: 0 0 8px 8px;
+        }
+        .bill-viewer-footer button {
+            min-width: 100px;
+        }
+        .bill-pdf-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+            padding: 10px;
+            min-height: 400px;
+        }
+        .bill-pdf-container iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 4px;
+        }
+        .bill-loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .bill-error {
+            color: #d32f2f;
+            padding: 15px;
+            background-color: #ffebee;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .bill-success {
+            color: #388e3c;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
 <div class="container py-4">
@@ -102,6 +189,26 @@
 
 <!-- Notifications Section -->
 <section id="notifications-section" class="mt-4">
+
+    <!-- #21FEB: Bill Viewer Modal -->
+    <div id="billViewerModal" class="bill-viewer-modal">
+        <div class="bill-viewer-content">
+            <div class="bill-viewer-header">
+                <h5 class="m-0">Bill Viewer</h5>
+                <button type="button" class="btn-close btn-close-white" onclick="closeBillViewer()"></button>
+            </div>
+            <div class="bill-viewer-body">
+                <div id="billViewerContent" class="bill-pdf-container">
+                    <div class="bill-loading">Loading bill...</div>
+                </div>
+            </div>
+            <div class="bill-viewer-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeBillViewer()">Close</button>
+                <button type="button" class="btn btn-primary" id="downloadBillBtn" onclick="downloadBill()">Download PDF</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Merchant Section -->
     <div id="merchant-bills-section" class="d-none">
         <h3 class="h5 mb-3">📬 Bill Management</h3>
@@ -207,12 +314,17 @@
     const uploadBillForm = document.getElementById("uploadBillForm");
     const uploadBillResult = document.getElementById("uploadBillResult");
     const uploadBillBtn = document.getElementById("uploadBillBtn");
+    // #21FEB: Bill viewer modal elements
+    const billViewerModal = document.getElementById("billViewerModal");
+    const billViewerContent = document.getElementById("billViewerContent");
+    const downloadBillBtn = document.getElementById("downloadBillBtn");
     
     let generatedBills = {}; // Track generated bills for sending
     let currentUserRole = null; // Store current user role
     let currentUser = null; // Store current user
     let merchantDetails = null; // Store merchant details
     let billPayloadCache = {}; // #18CHANGE: billId -> SendBillNotification payload
+    let currentViewingBillUrl = null; // #21FEB: Track current bill URL for download
 
     async function loadUserAndCheckMerchant() {
         try {
@@ -450,6 +562,10 @@
                     </div>
                     <div class="mt-2">Amount: ₹${parseFloat(bill.billAmount).toFixed(2)}</div>
                     <div class="text-muted">Mode: ${bill.paymentMode}</div>
+                    <!-- #21FEB: View bill button for customers -->
+                    <div class="mt-2">
+                        <button class="btn btn-info btn-sm" onclick="viewBillAsCustomer(${bill.billId})">View Bill</button>
+                    </div>
                 </div>
             </div>
         `).join("");
@@ -508,6 +624,8 @@
                         <div class="text-muted">Mode: ${bill.paymentMode}</div>
                         <div class="mt-2 d-flex align-items-center gap-2">
                             <button class="${btnClass}" ${disabledAttr} onclick="resendBill(${bill.billId})" id="resend-btn-${bill.billId}">${btnLabel}</button>
+                            <!-- #21FEB: View bill button for merchants -->
+                            <button class="btn btn-info btn-sm" onclick="viewBillAsMerchant(${bill.billId})">View Bill</button>
                             ${helperText}
                         </div>
                     </div>
@@ -758,6 +876,130 @@
     window.refreshCustomerBills = refreshCustomerBills;
     window.refreshMerchantBills = refreshMerchantBills;
     window.resendBill = resendBill;
+
+    // #21FEB: Bill viewing functions - Industry Standard (Modal-based)
+    
+    /**
+     * Open bill viewer modal and fetch bill for customer
+     * @param {number} billId - Bill ID to view
+     * #21FEB: Updated to extract signedURL from JSON response
+     */
+    window.viewBillAsCustomer = async function(billId) {
+        if (!billId || billId <= 0) {
+            showBillError("Invalid bill ID");
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/customer/view/bill/${encodeURIComponent(billId)}`, {
+                credentials: "include"
+            });
+
+            if (!resp.ok) {
+                const errData = await resp.json().catch(() => ({}));
+                throw new Error(errData.message || errData.error || `Failed to fetch bill (${resp.status})`);
+            }
+
+            // Backend returns JSON with signedURL key
+            const data = await resp.json();
+            const billUrl = data.signedURL || data.signedUrl;
+            
+            if (billUrl && billUrl.trim().startsWith("http")) {
+                currentViewingBillUrl = billUrl;
+                // Open bill in new window for better viewing
+                window.open(billUrl, "_blank");
+            } else {
+                showBillError("Invalid bill URL received from server");
+            }
+        } catch (err) {
+            showBillError(err.message);
+            alert("Error fetching bill:", err);
+        }
+    };
+
+    /**
+     * Open bill viewer modal and fetch bill for merchant
+     * @param {number} billId - Bill ID to view
+     * #21FEB: Updated to extract signedURL from JSON response
+     */
+    window.viewBillAsMerchant = async function(billId) {
+        if (!billId || billId <= 0) {
+            showBillError("Invalid bill ID");
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/merchant/view/bill/${encodeURIComponent(billId)}`, {
+                credentials: "include"
+            });
+
+            if (!resp.ok) {
+                const errData = await resp.json().catch(() => ({}));
+                throw new Error(errData.message || errData.error || `Failed to fetch bill (${resp.status})`);
+            }
+
+            // Backend returns JSON with signedURL key
+            const data = await resp.json();
+            const billUrl = data.signedURL || data.signedUrl;
+            
+            if (billUrl && billUrl.trim().startsWith("http")) {
+                currentViewingBillUrl = billUrl;
+                // Open bill in new window for better viewing
+                window.open(billUrl, "_blank");
+            } else {
+                showBillError("Invalid bill URL received from server");
+            }
+        } catch (err) {
+            showBillError(err.message);
+            alert("Error fetching bill:", err);
+        }
+    };
+
+    /**
+     * Close the bill viewer modal
+     */
+    window.closeBillViewer = function() {
+        billViewerModal.classList.remove("active");
+        billViewerContent.innerHTML = '<div class="bill-loading">Loading bill...</div>';
+        currentViewingBillUrl = null;
+    };
+
+    /**
+     * Download the currently viewed bill PDF
+     * #21FEB: Updated to use the stored bill URL from recent view
+     */
+    window.downloadBill = function() {
+        if (!currentViewingBillUrl) {
+            alert("No bill URL available. Please view a bill first.");
+            return;
+        }
+
+        // For Supabase signed URLs, just open in new window (browser will handle download)
+        window.open(currentViewingBillUrl, "_blank");
+    };
+
+    /**
+     * Show error message in bill viewer
+     */
+    function showBillError(message) {
+        billViewerContent.innerHTML = `<div class="bill-error">❌ Error: ${message}</div>`;
+    }
+
+    /**
+     * Show loading state in bill viewer
+     */
+    function showBillLoading() {
+        billViewerContent.innerHTML = '<div class="bill-loading"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div><br>Loading bill...</div>';
+    }
+
+    /**
+     * Close modal when clicking outside the content area
+     */
+    window.onclick = function(event) {
+        if (event.target === billViewerModal) {
+            closeBillViewer();
+        }
+    };
 
     // Load page
     loadUserAndCheckMerchant();

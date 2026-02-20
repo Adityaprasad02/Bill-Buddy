@@ -1,6 +1,7 @@
 package com.company.Bill_Bridge.service;
 
 import com.company.Bill_Bridge.exceptions.DBException;
+import com.company.Bill_Bridge.exceptions.DenialException;
 import com.company.Bill_Bridge.model.Bill;
 import com.company.Bill_Bridge.model.User;
 import com.company.Bill_Bridge.repository.BillRepository;
@@ -46,7 +47,12 @@ public class PaytmService {
 
     public JsonNode initiate(Long billId, User customerUser) throws Exception {
         
-        Bill bill = billRepository.findById(billId).orElseThrow( () -> new DBException("Bill with id : " + billId  + " not found")) ; 
+        Bill bill = billRepository.findById(billId).orElseThrow( () -> new DBException("Bill with id : " + billId  + " not found")) ;
+
+        if(bill.getBillLocation()==null){
+            throw new DenialException("Cant Initiate Payment , The bill hasnt been uploaded " +
+                    "by merchant yet ") ;
+        }
 
         JSONObject paytmParams = new JSONObject() ;
 
