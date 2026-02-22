@@ -12,10 +12,13 @@ import com.company.Bill_Bridge.repository.RefreshTokenRepository;
 import com.company.Bill_Bridge.repository.UserRepository;
 import com.company.Bill_Bridge.service.CookieService;
 import com.company.Bill_Bridge.service.JWTService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,6 +45,8 @@ public class AuthenticationController {
 
     @Autowired
     private CookieService cookieService ;
+
+
 
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest loginRequest , HttpServletResponse response){
@@ -88,5 +93,77 @@ public class AuthenticationController {
                 new ResponseUserRegistration(user.getId() , user.getEmail() , user.getUsername() ,
                             user.getRole() , user.getAuthProvider()))
         );
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenResponse> refreshToken(HttpServletRequest request , HttpServletResponse response){
+
+        String refreshToken  = null ;
+
+        String refreshHeader = request.getHeader("X-REFRESH-TOKEN") ;
+        if(refreshHeader!=null && !refreshHeader.isBlank()){
+             refreshToken = refreshHeader.trim();
+        }
+
+        if(refreshToken!=null && jwtService.isRefreshToken(refreshToken)){
+            String jti = jwtService.getJti(refreshToken) ;
+
+            RefreshToken oldRefreshToken = refreshTokenRepository.findByJti(jti)
+                                          .orElseThrow(()-> new BadCredentialsException("the refresh token ain't exist")) ;
+
+            if(oldRefreshToken.isRevoked()){
+                throw new BadCredentialsException("refreshToken has been revoked")  ;
+            }
+
+            if(oldRefreshToken.getExpiresAt().isBefore(Instant.now())){
+                throw new BadCredentialsException("refresh token expired") ;
+            }
+
+            // revoke -> true
+            oldRefreshToken.setRevoked(true);
+
+            //generate new jti for new refresh token
+            String newJti = UUID.randomUUID().toString() ;
+
+            // set replaced by field from null to new jti
+            oldRefreshToken.setReplacedByToken(newJti);
+
+            // save the changes
+            refreshTokenRepository.save(oldRefreshToken) ;
+
+            User user = oldRefreshToken.getUser() ;
+
+
+            // generate new Refresh Token
+            RefreshToken refreshTokenObj = RefreshToken.builder()
+                    .jti(newJti)
+                    .user(user)
+                    .createdAt(Instant.now())
+                    .expiresAt(Instant.now().plusMillis(jwtService.getRefreshTokenExpiration()))
+                    .revoked(false)
+                    .build() ;
+
+            // save
+            refreshTokenRepository.save(refreshTokenObj) ;
+
+            // generate new access token
+            String newAccessToken  = jwtService.generateAccessToken(user) ;
+
+            // generate new refresh token
+            String newRefreshToken = jwtService.generateRefreshToken(user,refreshTokenObj.getJti()) ;
+
+            // attach refresh token to cookie
+            cookieService.attachRefreshCookie(response , newRefreshToken , Math.toIntExact(jwtService.getRefreshTokenExpiration()));
+
+            // add no store in headers
+            cookieService.addNoStoreHeaders(response);
+
+            // return TokenResponse ;
+            return ResponseEntity.ok( new TokenResponse(newAccessToken , newRefreshToken , jwtService.getAccessTokenExpiration(),
+                    new ResponseUserRegistration(user.getId() , user.getEmail() , user.getUsername() ,
+                            user.getRole() , user.getAuthProvider()))
+            );
+        }
+           return null ;
     }
 }

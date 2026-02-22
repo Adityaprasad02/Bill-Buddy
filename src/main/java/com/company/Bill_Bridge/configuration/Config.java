@@ -1,6 +1,7 @@
 package com.company.Bill_Bridge.configuration;
 
 
+import com.company.Bill_Bridge.filter.JWTFilter;
 import com.company.Bill_Bridge.service.CustomUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +18,7 @@ import org.springframework.security.config.annotation.web.configurers.HeadersCon
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -31,6 +33,9 @@ public class Config {
      @Autowired
      private CustomUserDetailService userDetailService ;
 
+     @Autowired
+     private JWTFilter jwtFilter ;
+
 
 
      @Bean
@@ -40,7 +45,8 @@ public class Config {
           http.csrf(AbstractHttpConfigurer::disable)
                   .authorizeHttpRequests( (request) ->
                               request.requestMatchers("/register",
-                                              "/login" , "/user/create/**" , "/index.html" ,"/h2/**").permitAll()
+                                              "/login" , "/user/create/**" , "/index.html" ,"/h2/**"
+                                             , "/refresh").permitAll()
                                       .requestMatchers("/merchant/**").hasRole("MERCHANT")
                                       .requestMatchers("/user/**" , "/dashboard.html" , "/ws/**").hasAnyRole("CUSTOMER" , "MERCHANT")
                                       .anyRequest().authenticated())
@@ -48,7 +54,7 @@ public class Config {
                           session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                   .cors(Customizer.withDefaults())
                   .authenticationProvider(provider())
-
+                  .addFilterBefore(jwtFilter , UsernamePasswordAuthenticationFilter.class)
           ;
 //                  .headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
 //                  .formLogin( form -> form.loginPage("/login.html").loginProcessingUrl("/do-login").defaultSuccessUrl("/dashboard.html" , true).permitAll()) ;

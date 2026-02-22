@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import java.util.UUID;
         @Index(name = "refresh_tokens_user_id_idx", columnList = "user_id")
 })
 @Builder
+@NoArgsConstructor
 public class RefreshToken {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

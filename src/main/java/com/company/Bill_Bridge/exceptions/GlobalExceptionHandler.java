@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleUnhandled(Exception e) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Internal server error"));
+                .body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -48,6 +48,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidJWTToken.class)
+    public ResponseEntity<?> handleInvalidJWT(InvalidJWTToken exc){
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error" , exc.getMessage())) ;
     }
 
 }

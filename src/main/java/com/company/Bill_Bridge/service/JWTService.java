@@ -65,7 +65,7 @@ public class JWTService {
               .claims(Map.of(
                       "typ" , "access" ,
                       "role" , user.getRole() ,
-                      "email" , user.getEmail()
+                      "username" , user.getUsername()
               ))
               .subject(user.getId().toString())
               .issuedAt(Date.from(Instant.now()))
@@ -120,5 +120,13 @@ public class JWTService {
     }
 
 
+    public String extractUsername(String token) {
+        Claims claims  = parseClaims(token).getPayload() ;
+        return  claims.get("username").toString() ;
+    }
 
+    public String getJti(String refreshToken) {
+        Claims claims  = parseClaims(refreshToken).getPayload() ;
+        return  claims.get("jti").toString() ;
+    }
 }
