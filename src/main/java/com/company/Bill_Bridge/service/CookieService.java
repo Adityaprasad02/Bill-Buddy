@@ -49,6 +49,7 @@ public class CookieService {
     }
 
 
+    // add no store headers
     public void addNoStoreHeaders(HttpServletResponse response) {
         response.setHeader(HttpHeaders.CACHE_CONTROL , "no-store");
         response.setHeader("Pragma"  , "no-cache");
@@ -56,6 +57,26 @@ public class CookieService {
 
 
     // clear refresh token from cookie
+    public void clearRefreshCookie(HttpServletResponse response) {
 
-    // add no store headers
+        var builder = ResponseCookie.from(refreshTokenCookieName , "")
+                .maxAge(0)
+                .httpOnly(cookieHttpOnly)
+                .path("/")
+                .sameSite(cookieSameSite)
+                .secure(cookieSecure);
+
+        if(cookieDomain!=null && !cookieDomain.isBlank())
+        {
+            builder.domain(cookieDomain);
+
+        }
+
+
+        ResponseCookie responseCookie = builder.build();
+        response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+    }
+
+
+
 }

@@ -16,11 +16,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -165,5 +167,32 @@ public class AuthenticationController {
             );
         }
            return null ;
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void>  logout (HttpServletRequest request , HttpServletResponse response){
+        String refreshToken  = null ;
+
+        String refreshHeader = request.getHeader("X-REFRESH-TOKEN") ;
+        if(refreshHeader!=null && !refreshHeader.isBlank()){
+            refreshToken = refreshHeader.trim();
+
+            if(refreshToken!=null && jwtService.isRefreshToken(refreshToken)) {
+                String jti = jwtService.getJti(refreshToken);
+
+                RefreshToken oldRefreshToken = refreshTokenRepository.findByJti(jti)
+                        .orElseThrow(() -> new BadCredentialsException("the refresh token ain't exist"));
+
+                oldRefreshToken.setRevoked(true);
+                refreshTokenRepository.save(oldRefreshToken) ;
+
+                cookieService.clearRefreshCookie(response) ;
+                cookieService.addNoStoreHeaders(response);
+
+                SecurityContextHolder.clearContext();
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            }
+            }
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 }

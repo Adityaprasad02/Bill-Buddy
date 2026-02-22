@@ -45,16 +45,17 @@ public class Config {
           http.csrf(AbstractHttpConfigurer::disable)
                   .authorizeHttpRequests( (request) ->
                               request.requestMatchers("/register",
-                                              "/login" , "/user/create/**" , "/index.html" ,"/h2/**"
-                                             , "/refresh").permitAll()
+                                              "/login" , "/user/create/**" , "/index.html" ,"/h2/**","/refresh" ,"/logout"
+                                             ).permitAll()
                                       .requestMatchers("/merchant/**").hasRole("MERCHANT")
-                                      .requestMatchers("/user/**" , "/dashboard.html" , "/ws/**").hasAnyRole("CUSTOMER" , "MERCHANT")
+                                      .requestMatchers("/user/**" , "/dashboard.html" , "/ws/**" ).hasAnyRole("CUSTOMER" , "MERCHANT")
                                       .anyRequest().authenticated())
                   .sessionManagement(session ->
                           session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                   .cors(Customizer.withDefaults())
                   .authenticationProvider(provider())
                   .addFilterBefore(jwtFilter , UsernamePasswordAuthenticationFilter.class)
+                  .logout(AbstractHttpConfigurer::disable)
           ;
 //                  .headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
 //                  .formLogin( form -> form.loginPage("/login.html").loginProcessingUrl("/do-login").defaultSuccessUrl("/dashboard.html" , true).permitAll()) ;
