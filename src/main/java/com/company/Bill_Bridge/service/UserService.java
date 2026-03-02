@@ -44,8 +44,7 @@ public class UserService {
      private PaymentDetailsRepository paymentDetailsRepository ;
     
 
-    @Autowired
-    private BCryptPasswordEncoder encoder ;
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12) ;
 
     @Transactional
     public ResponseUserRegistration createUser(RequestUserRegister register) throws DBException {
@@ -62,7 +61,7 @@ public class UserService {
         User newUser = User.builder()
                 .username(username)
                 .email(email)
-                .password(encoder.encode(password))
+                .password(password==null ? null : encoder.encode(password))
                 .role(role)
                 .authProvider(authProvider)
                 .build();

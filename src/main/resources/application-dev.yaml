@@ -14,6 +14,18 @@ spring:
     console:
       enabled: true
       path: /h2
+  security:
+    oAuth2:
+      client:
+        registration:
+          google:
+            client-id: 316125295651-lk6447p1nfbn2scu0qqvf68ar124m7lp.apps.googleusercontent.com
+            client-secret: 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
+            scope:
+              - email
+              - openid
+              - profile
+
 
 supabase:
   url: https://kcnoyckvyxifooitkbhu.supabase.co
@@ -32,16 +44,19 @@ logging:
           pg: OFF
 
 security:
-  jwt:
-    secret: Oc4W/lmEDbpRTZqD0vvlgznr0lNmE/IQARsQPt7RIvgD6Ye9RktGv9+y2dn4RKkQwmVeQFbNw9/Zu0Eq66/gkg==
-    issuer: Bill-Bridge
-    access-token-expiration: 60000 # 1 minute in milliseconds  
-    refresh-token-expiration: 600000 # 10 minutes in milliseconds
-    refresh-token-cookie-name: refreshToken
-    cookie-secure: true
-    cookie-http-only: true
-    cookie-same-site: lax
-    cookie-domain: localhost
+    jwt:
+      secret: Oc4W/lmEDbpRTZqD0vvlgznr0lNmE/IQARsQPt7RIvgD6Ye9RktGv9+y2dn4RKkQwmVeQFbNw9/Zu0Eq66/gkg==
+      issuer: Bill-Bridge
+      access-token-expiration: 60000 # 1 minute in milliseconds  
+      refresh-token-expiration: 600000 # 10 minutes in milliseconds
+      refresh-token-cookie-name: refreshToken
+      cookie-secure: true
+      cookie-http-only: true
+      cookie-same-site: lax
+      cookie-domain: localhost
+
+
+
     
 
 

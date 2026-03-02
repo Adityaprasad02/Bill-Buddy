@@ -28,7 +28,7 @@ public class RequestUserRegister {
 
 
 
-    @NotBlank(message = "password is required")
+
     private String password ;
 
 

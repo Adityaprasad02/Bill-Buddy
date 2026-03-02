@@ -40,8 +40,7 @@ public class User implements UserDetails {
     private String email ;
 
 
-    @Column(name = "password" , nullable = false)
-    @NotBlank(message = "password is required")
+    @Column(name = "password" , nullable = true)
     private String password ;
 
     @Column(name = "role" , nullable = false)

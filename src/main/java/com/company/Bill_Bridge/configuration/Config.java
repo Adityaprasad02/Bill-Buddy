@@ -3,6 +3,7 @@ package com.company.Bill_Bridge.configuration;
 
 import com.company.Bill_Bridge.filter.JWTFilter;
 import com.company.Bill_Bridge.service.CustomUserDetailService;
+import com.company.Bill_Bridge.service.Oauth2SuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,9 +37,14 @@ public class Config {
      @Autowired
      private JWTFilter jwtFilter ;
 
+     private final Oauth2SuccessHandler oauth2SuccessHandler ;
+
+    public Config(Oauth2SuccessHandler oauth2SuccessHandler) {
+        this.oauth2SuccessHandler = oauth2SuccessHandler;
+    }
 
 
-     @Bean
+    @Bean
      public SecurityFilterChain securityFilterChain(HttpSecurity http) {
 
 
@@ -54,8 +60,12 @@ public class Config {
                           session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                   .cors(Customizer.withDefaults())
                   .authenticationProvider(provider())
-                  .addFilterBefore(jwtFilter , UsernamePasswordAuthenticationFilter.class)
+                  .oauth2Login(oauth2 -> {
+                    oauth2.successHandler(oauth2SuccessHandler)
+                          .failureHandler(null) ; 
+                  })
                   .logout(AbstractHttpConfigurer::disable)
+                  .addFilterBefore(jwtFilter , UsernamePasswordAuthenticationFilter.class)
           ;
 //                  .headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
 //                  .formLogin( form -> form.loginPage("/login.html").loginProcessingUrl("/do-login").defaultSuccessUrl("/dashboard.html" , true).permitAll()) ;
@@ -63,10 +73,7 @@ public class Config {
           return http.build() ;
      }
 
-     @Bean
-     public BCryptPasswordEncoder encoder(){
-          return new BCryptPasswordEncoder(12) ;
-     }
+
 
      @Bean
      public RestClient restClient (){
@@ -79,7 +86,7 @@ public class Config {
      public AuthenticationProvider provider(){
           DaoAuthenticationProvider daoAuthenticationProvider
                   = new DaoAuthenticationProvider(userDetailService) ;
-          daoAuthenticationProvider.setPasswordEncoder(encoder());
+          daoAuthenticationProvider.setPasswordEncoder(new BCryptPasswordEncoder(12));
           return daoAuthenticationProvider ;
      }
      @Bean

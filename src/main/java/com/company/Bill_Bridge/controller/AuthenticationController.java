@@ -12,6 +12,8 @@ import com.company.Bill_Bridge.repository.RefreshTokenRepository;
 import com.company.Bill_Bridge.repository.UserRepository;
 import com.company.Bill_Bridge.service.CookieService;
 import com.company.Bill_Bridge.service.JWTService;
+
+import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +29,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 public class AuthenticationController {
@@ -47,6 +53,7 @@ public class AuthenticationController {
 
     @Autowired
     private CookieService cookieService ;
+
 
 
 
