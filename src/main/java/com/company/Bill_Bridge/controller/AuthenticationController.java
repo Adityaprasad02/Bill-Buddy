@@ -2,6 +2,7 @@ package com.company.Bill_Bridge.controller;
 
 
 import com.company.Bill_Bridge.exceptions.DBException;
+import com.company.Bill_Bridge.exceptions.DenialException;
 import com.company.Bill_Bridge.model.RefreshToken;
 import com.company.Bill_Bridge.model.User;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.LoginRequest;
@@ -24,6 +25,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,44 +66,50 @@ public class AuthenticationController {
         String password = loginRequest.password();
 
 
-        Authentication authentication = authenticationManager
-                                       .authenticate(new UsernamePasswordAuthenticationToken(username,password)) ;
+        try {
+            Authentication authentication = authenticationManager
+                                           .authenticate(new UsernamePasswordAuthenticationToken(username,password)) ;
 
-        User user = userRepository.findByUsername(username).orElseThrow(()->
-                        new DBException("user not found with username " + username)) ;
+            User user = userRepository.findByUsername(username).orElseThrow(()->
+                            new DBException("user not found with username " + username)) ;
 
-        //generate jti for refresh token
-        String jti = UUID.randomUUID().toString() ;
+            //generate jti for refresh token
+            String jti = UUID.randomUUID().toString() ;
 
-        //refresh token build
-        RefreshToken refreshTokenObj = RefreshToken.builder()
-                .jti(jti)
-                .user(user)
-                .createdAt(Instant.now())
-                .expiresAt(Instant.now().plusMillis(jwtService.getRefreshTokenExpiration()))
-                .revoked(false)
-                .build() ;
+            //refresh token build
+            RefreshToken refreshTokenObj = RefreshToken.builder()
+                    .jti(jti)
+                    .user(user)
+                    .createdAt(Instant.now())
+                    .expiresAt(Instant.now().plusMillis(jwtService.getRefreshTokenExpiration()))
+                    .revoked(false)
+                    .build() ;
 
-        // save
-        refreshTokenRepository.save(refreshTokenObj) ;
+            // save
+            refreshTokenRepository.save(refreshTokenObj) ;
 
-        // generate access token
-        String accessToken  = jwtService.generateAccessToken(user) ;
+            // generate access token
+            String accessToken  = jwtService.generateAccessToken(user) ;
 
-        // generate refresh token
-        String refreshToken = jwtService.generateRefreshToken(user,refreshTokenObj.getJti()) ;
+            // generate refresh token
+            String refreshToken = jwtService.generateRefreshToken(user,refreshTokenObj.getJti()) ;
 
-        // attach refresh token to cookie
-        cookieService.attachRefreshCookie(response , refreshToken , Math.toIntExact(jwtService.getRefreshTokenExpiration()));
+            // attach refresh token to cookie
+            cookieService.attachRefreshCookie(response , refreshToken , Math.toIntExact(jwtService.getRefreshTokenExpiration()));
 
-        // add no store in headers
-        cookieService.addNoStoreHeaders(response);
+            // add no store in headers
+            cookieService.addNoStoreHeaders(response);
 
-        // return TokenResponse ;
-        return ResponseEntity.ok( new TokenResponse(accessToken , refreshToken , jwtService.getAccessTokenExpiration(),
-                new ResponseUserRegistration(user.getId() , user.getEmail() , user.getUsername() ,
-                            user.getRole() , user.getAuthProvider()))
-        );
+            // return TokenResponse ;
+            return ResponseEntity.ok( new TokenResponse(accessToken , refreshToken , jwtService.getAccessTokenExpiration(),
+                    new ResponseUserRegistration(user.getId() , user.getEmail() , user.getUsername() ,
+                                user.getRole() , user.getAuthProvider()))
+            );
+        } catch (AuthenticationException e) {
+            throw new DenialException(e.getMessage());
+        } catch (DBException e) {
+            throw new DBException(e.getMessage());
+        }
     }
 
     @PostMapping("/refresh")

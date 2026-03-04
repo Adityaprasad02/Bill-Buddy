@@ -1,5 +1,6 @@
 package com.company.Bill_Bridge.service;
 
+import com.company.Bill_Bridge.exceptions.DBException;
 import com.company.Bill_Bridge.model.RefreshToken;
 import com.company.Bill_Bridge.model.User;
 import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestUserRegister;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -21,6 +23,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Provider;
 import java.time.Instant;
 import java.util.UUID;
@@ -33,12 +37,15 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
     private final JWTService jwtService ;
     private final CookieService cookieService ;
     private final RefreshTokenRepository refreshTokenRepository ;
+    private final String frontendURL ;
 
-    public Oauth2SuccessHandler(UserService userService , JWTService jwtService, CookieService cookieService , RefreshTokenRepository refreshTokenRepository  ) {
+    public Oauth2SuccessHandler(UserService userService , JWTService jwtService, CookieService cookieService
+            , RefreshTokenRepository refreshTokenRepository, @Value("${frontend.url}")String frontendURL) {
         this.userService = userService;
         this.jwtService = jwtService ;
         this.cookieService = cookieService ;
         this.refreshTokenRepository = refreshTokenRepository ;
+        this.frontendURL = frontendURL;
     }
 
     @Override
@@ -71,7 +78,15 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
                 
                 
                 // check if user already exist with email if nt then save the user
-                var res = userService.createUser(requestUserRegister) ; 
+
+                ResponseUserRegistration res = null;
+                try {
+                    res = userService.createUser(requestUserRegister);
+                } catch (DBException e) {
+                        String errorMessage = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+                        response.sendRedirect(frontendURL + "/signup?error=" + errorMessage);
+                        return;
+                }
 
                 User user2 = User.builder()
                             .id(res.userId())
@@ -84,6 +99,8 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
                 var operation =  generateAccessandRefreshTokenAndSetInCookie(user2 , response) ;
 
                 log.info("TokenResponse-OAuth2 : {}" , operation.toString());
+
+//                response.sendRedirect( frontendURL + "/signup?success=new user created");
 
 
                 

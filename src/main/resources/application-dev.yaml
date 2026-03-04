@@ -55,7 +55,8 @@ security:
       cookie-same-site: lax
       cookie-domain: localhost
 
-
+frontend:
+    url: http://localhost:5173
 
     
 

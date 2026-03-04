@@ -5,6 +5,7 @@ import com.company.Bill_Bridge.filter.JWTFilter;
 import com.company.Bill_Bridge.service.CustomUserDetailService;
 import com.company.Bill_Bridge.service.Oauth2SuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,9 +39,12 @@ public class Config {
      private JWTFilter jwtFilter ;
 
      private final Oauth2SuccessHandler oauth2SuccessHandler ;
+     private final String frontendURL ;
 
-    public Config(Oauth2SuccessHandler oauth2SuccessHandler) {
+
+    public Config(Oauth2SuccessHandler oauth2SuccessHandler,@Value("${frontend.url}")String frontendURL) {
         this.oauth2SuccessHandler = oauth2SuccessHandler;
+        this.frontendURL = frontendURL ;
     }
 
 
@@ -98,7 +102,7 @@ public class Config {
      public CorsConfigurationSource corsConfigurationSource(
      ) {
           CorsConfiguration configuration = new CorsConfiguration();
-          configuration.setAllowedOrigins(List.of("*")); // For production, restrict to your frontends
+          configuration.setAllowedOrigins(List.of(frontendURL)); // For production, restrict to your frontends
           configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
           configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
           configuration.setExposedHeaders(List.of("Authorization"));
