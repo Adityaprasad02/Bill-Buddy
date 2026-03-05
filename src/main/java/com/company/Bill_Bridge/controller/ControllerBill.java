@@ -37,12 +37,7 @@ public class ControllerBill {
     private  UserService userService ;
 
     @PostMapping("/user/create")
-    public ResponseEntity<ResponseUserRegistration> createUser(@Valid @RequestBody RequestUserRegister register){
-        ResponseUserRegistration responseDetails = null ;
-        try {
-             responseDetails = userService.createUser(register);
-        } catch (DBException e) {
-            throw new RuntimeException(e);
+    public ResponseEntity<ResponseUserRegistration> createUser(@Valid @RequestBody RequestUserRegister register){ResponseUserRegistration responseDetails = null ;try {responseDetails = userService.createUser(register);} catch (DBException e) {throw new RuntimeException(e);
         }
         return ResponseEntity.ok(responseDetails);
     }

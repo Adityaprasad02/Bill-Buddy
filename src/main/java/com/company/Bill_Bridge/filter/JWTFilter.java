@@ -46,7 +46,10 @@ public class JWTFilter extends OncePerRequestFilter {
 
 
                 if(!jwtService.isJwtValid(token)){
-                    throw new InvalidJWTToken(token) ;
+                    // Token is expired or invalid — skip authentication and let
+                    // Spring Security return 401 via the configured entry point.
+                    filterChain.doFilter(request, response);
+                    return;
                 }
 
                 String username = jwtService.extractUsername(token) ;
@@ -65,14 +68,13 @@ public class JWTFilter extends OncePerRequestFilter {
 
                         context.setAuthentication(authenticationToken);
                         SecurityContextHolder.setContext(context);
-                    }else{
-                        throw new UsernameNotFoundException("User is disabled");
                     }
 
                 }
             }
-        } catch (IOException | ServletException | UsernameNotFoundException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            // Token parsing / validation failed — continue unauthenticated
+            logger.error("JWT processing failed: " + e.getMessage());
         }
 
         filterChain.doFilter(request,response);

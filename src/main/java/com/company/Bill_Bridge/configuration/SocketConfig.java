@@ -1,35 +1,42 @@
 package com.company.Bill_Bridge.configuration;
 
 
-import com.company.Bill_Bridge.model.User;
-import jakarta.persistence.Entity;
-import org.jspecify.annotations.Nullable;
+import com.company.Bill_Bridge.service.CustomUserDetailService;
+import com.company.Bill_Bridge.service.JWTService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
+import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
-import java.util.Collection;
-
 
 @Configuration
 @EnableWebSocketMessageBroker
+@Order(Ordered.HIGHEST_PRECEDENCE + 99)
 public class SocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    @Autowired
+    private JWTService jwtService;
+
+    @Autowired
+    private CustomUserDetailService userDetailService;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/billbuddy")
                 .setAllowedOriginPatterns("*")
-                .addInterceptors() // implement while jwt auth to verify jwt
                 .withSockJS() ;
     }
 
@@ -40,5 +47,34 @@ public class SocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.setUserDestinationPrefix("/user") ;
     }
 
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(new ChannelInterceptor() {
+            @Override
+            public Message<?> preSend(Message<?> message, MessageChannel channel) {
+                StompHeaderAccessor accessor =
+                        MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
+                if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
+                    String authHeader = accessor.getFirstNativeHeader("Authorization");
+                    if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                        String token = authHeader.substring(7);
+                        try {
+                            if (jwtService.isAccessToken(token) && jwtService.isJwtValid(token)) {
+                                String username = jwtService.extractUsername(token);
+                                UserDetails userDetails = userDetailService.loadUserByUsername(username);
+                                UsernamePasswordAuthenticationToken auth =
+                                        new UsernamePasswordAuthenticationToken(
+                                                userDetails, null, userDetails.getAuthorities());
+                                accessor.setUser(auth);
+                            }
+                        } catch (Exception e) {
+                            // Invalid token — connection proceeds unauthenticated
+                        }
+                    }
+                }
+                return message;
+            }
+        });
+    }
 }

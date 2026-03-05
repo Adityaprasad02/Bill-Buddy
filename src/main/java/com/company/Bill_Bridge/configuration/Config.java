@@ -25,6 +25,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 
@@ -55,7 +56,8 @@ public class Config {
           http.csrf(AbstractHttpConfigurer::disable)
                   .authorizeHttpRequests( (request) ->
                               request.requestMatchers("/register",
-                                              "/login" , "/user/create/**" , "/index.html" ,"/h2/**","/refresh" ,"/logout"
+                                              "/login" , "/user/create/**" , "/index.html" ,"/h2/**","/refresh" ,"/logout",
+                                              "/billbuddy/**"
                                              ).permitAll()
                                       .requestMatchers("/merchant/**").hasRole("MERCHANT")
                                       .requestMatchers("/user/**" , "/dashboard.html" , "/ws/**" ).hasAnyRole("CUSTOMER" , "MERCHANT")
@@ -64,6 +66,13 @@ public class Config {
                           session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                   .cors(Customizer.withDefaults())
                   .authenticationProvider(provider())
+                  .exceptionHandling(ex -> ex
+                          .authenticationEntryPoint((request, response, authException) -> {
+                              response.setContentType("application/json");
+                              response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                              response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"" + authException.getMessage() + "\"}");
+                          })
+                  )
                   .oauth2Login(oauth2 -> {
                     oauth2.successHandler(oauth2SuccessHandler)
                           .failureHandler(null) ; 
@@ -104,7 +113,7 @@ public class Config {
           CorsConfiguration configuration = new CorsConfiguration();
           configuration.setAllowedOrigins(List.of(frontendURL)); // For production, restrict to your frontends
           configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-          configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
+          configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With" , "X-REFRESH-TOKEN"));
           configuration.setExposedHeaders(List.of("Authorization"));
           configuration.setAllowCredentials(true);
           configuration.setMaxAge(3600L);
