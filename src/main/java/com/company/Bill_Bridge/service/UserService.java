@@ -54,9 +54,12 @@ public class UserService {
         Role role = register.getRole();
         LoginAuthProvider authProvider = register.getAuthProvider();
 
-        if(userRepository.existsByEmail(email)){
-            throw new DBException("email already exists") ;
-        }
+        Optional<User> checkUser = null ;
+
+        checkUser = userRepository.findByEmail(email) ;
+          if(checkUser.isPresent()){
+              throw  new DBException("exist-" + checkUser.get().getId().toString());
+          }
 
         User newUser = User.builder()
                 .username(username)

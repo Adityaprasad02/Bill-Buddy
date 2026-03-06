@@ -45,11 +45,11 @@ public class FileService {
         Bill bill =  billRepository.findByBillId(billId)
                 .orElseThrow(() -> new DBException("Bill not found with id : " + billId));
 
-        if( (bill.getMerchant().
-                getUser()
-                .getId()!=(user.getId())) ){
-            throw  new DenialException(" Not authorized to upload Bill") ;
-        }
+//        if( (bill.getMerchant().
+//                getUser()
+//                .getId()!=(user.getId())) ){
+//            throw  new DenialException(" Not authorized to upload Bill") ;
+//        }
 
         if(bill.getStatus()==PaymentStatus.PAID){
             throw new DenialException("Payment already completed by Customer , cant Upload AnyMore") ;
