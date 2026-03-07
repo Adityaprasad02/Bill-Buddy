@@ -22,6 +22,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -102,7 +103,25 @@ public class ControllerBill {
         var allBills = userService.merchantGetAllBills(merchant_id) ;
         return new ResponseEntity<>(allBills , HttpStatus.OK);
     }
-    
+
+    @GetMapping("/merchant/fetch/bill/{merchant_id}/{page}/{pageSize}")
+    public ResponseEntity<PaginatedBillResponse> getMerchantListBillsbyPagination
+            (@PathVariable UUID merchant_id,@PathVariable int page , @PathVariable int pageSize){
+        var allBills = userService.merchantGetAllBillsByPagination(merchant_id,page,pageSize) ;
+        return new ResponseEntity<>(allBills , HttpStatus.OK);
+    }
+
+    @GetMapping("/user/fetch/paymentDetails/{billId}")
+    public ResponseEntity<ResponsePaymentFetch> getPaymentDetails(@PathVariable Long billId){
+        var paymentDetails = userService.getPaymentDetails(billId) ;
+        return ResponseEntity.ok(paymentDetails);
+    }
+
+    @DeleteMapping("/merchant/delete/bill/{bill_Id}")
+    public ResponseEntity<String> deletePendingBill(@PathVariable Long bill_Id , @AuthenticationPrincipal User user){
+       var response =   userService.deletePendingBill(bill_Id,user) ;
+       return ResponseEntity.ok(response) ;
+    }
 
 
 

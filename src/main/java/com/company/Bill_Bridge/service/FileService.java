@@ -4,6 +4,7 @@ import com.company.Bill_Bridge.exceptions.DBException;
 import com.company.Bill_Bridge.exceptions.DenialException;
 import com.company.Bill_Bridge.model.Bill;
 import com.company.Bill_Bridge.model.User;
+import com.company.Bill_Bridge.model.enums.PaymentMode;
 import com.company.Bill_Bridge.model.enums.PaymentStatus;
 import com.company.Bill_Bridge.repository.BillRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -45,13 +46,9 @@ public class FileService {
         Bill bill =  billRepository.findByBillId(billId)
                 .orElseThrow(() -> new DBException("Bill not found with id : " + billId));
 
-//        if( (bill.getMerchant().
-//                getUser()
-//                .getId()!=(user.getId())) ){
-//            throw  new DenialException(" Not authorized to upload Bill") ;
-//        }
 
-        if(bill.getStatus()==PaymentStatus.PAID){
+        if((bill.getMode()== PaymentMode.ONLINE && bill.getStatus()==PaymentStatus.PAID)
+           || (bill.getMode()==PaymentMode.CASH && bill.getBillLocation()!=null)){
             throw new DenialException("Payment already completed by Customer , cant Upload AnyMore") ;
         }
 

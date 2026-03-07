@@ -19,11 +19,14 @@ import com.company.Bill_Bridge.repository.PaymentDetailsRepository;
 import com.company.Bill_Bridge.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -256,4 +259,57 @@ public class UserService {
     }
 
 
+    public PaginatedBillResponse merchantGetAllBillsByPagination(UUID merchantId, int page, int pageSize) {
+
+        Page<Bill> billPage = billRepository.findAllByMerchant_MerchantIdOrderByCreatedAtDesc
+                (merchantId , PageRequest.of(page,pageSize)) ;
+
+        List<Bill> listOfBills = billPage.getContent() ;
+
+        var allBills = getFetchAllBills(listOfBills) ;
+
+        return new PaginatedBillResponse(allBills, billPage.getNumber(), billPage.getTotalPages(), billPage.getTotalElements()) ;
+
+    }
+
+    public ResponsePaymentFetch getPaymentDetails(Long billId) {
+        PaymentDetails paymentDetails = paymentDetailsRepository.findByBill_BillId(billId)
+                .orElseThrow(() -> new DBException("bill with Id " + billId + "doesntExist"));
+
+        return new ResponsePaymentFetch(
+                paymentDetails.getId(),
+                paymentDetails.getTxnId(),
+                paymentDetails.getBankTxnId(),
+                paymentDetails.getOrderId(),
+                paymentDetails.getTxnAmount(),
+                paymentDetails.getTxnType(),
+                paymentDetails.getGatewayName(),
+                paymentDetails.getBankName(),
+                paymentDetails.getRefundAmt(),
+                paymentDetails.getTxnDate(),
+                paymentDetails.getResultStatus()
+        );
+
+    }
+    @Transactional
+    public String deletePendingBill(Long billId, User user) {
+        if(user.getRole().equals(Role.CUSTOMER)){
+            throw new DenialException("role : " + user.getRole() + " not allowed for this action") ;
+        }
+
+        Bill bill =  billRepository.findByBillId(billId)
+                .orElseThrow(() -> new DBException("Bill not found with id : " + billId));
+
+        if(bill.getStatus().equals(PaymentStatus.PAID)){
+            throw  new DenialException("cant Delete with Payment Status : " + PaymentStatus.PAID) ;
+        }
+
+        try {
+            billRepository.deleteByBillId(billId);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
+        return  "Bill deleted successfully with id : " + billId ;
+    }
 }

@@ -47,7 +47,7 @@ security:
     jwt:
       secret: Oc4W/lmEDbpRTZqD0vvlgznr0lNmE/IQARsQPt7RIvgD6Ye9RktGv9+y2dn4RKkQwmVeQFbNw9/Zu0Eq66/gkg==
       issuer: Bill-Bridge
-      access-token-expiration: 300000 # 5 min access token
+      access-token-expiration: 480000 # 8 minutes in milliseconds
       refresh-token-expiration: 600000 # 10 minutes in milliseconds
       refresh-token-cookie-name: refreshToken
       cookie-secure: true
