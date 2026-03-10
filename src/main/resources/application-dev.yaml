@@ -1,0 +1,65 @@
+server:
+  port: 8000
+
+spring:
+  datasource:
+    url: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:5432/postgres
+    username: postgres.kcnoyckvyxifooitkbhu
+    password: BillBridge@0209
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  security:
+    oAuth2:
+      client:
+        registration:
+          google:
+            client-id: 316125295651-lk6447p1nfbn2scu0qqvf68ar124m7lp.apps.googleusercontent.com
+            client-secret: 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
+            scope:
+              - email
+              - openid
+              - profile
+
+
+supabase:
+  url: https://kcnoyckvyxifooitkbhu.supabase.co
+  service-role-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtjbm95Y2t2eXhpZm9vaXRrYmh1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTU3NDU5MSwiZXhwIjoyMDg3MTUwNTkxfQ.HHWu5CBHaBIWrHHcAVD2DYEFtIpEP0PDoNMuFbxRxGA
+  bucket: bills
+    
+paytm:
+  merchant-id: tXvhzx31620803258735
+  merchant-key: snZDiqGM3sEfN@Rp
+  base-url: https://securestage.paytmpayments.com
+
+logging:
+    level:
+        com:
+          paytm: OFF
+        paytm:
+          pg: OFF
+
+security:
+    jwt:
+      secret: Oc4W/lmEDbpRTZqD0vvlgznr0lNmE/IQARsQPt7RIvgD6Ye9RktGv9+y2dn4RKkQwmVeQFbNw9/Zu0Eq66/gkg==
+      issuer: Bill-Bridge
+      access-token-expiration: 480000 # 8 minutes in milliseconds
+      refresh-token-expiration: 600000 # 10 minutes in milliseconds
+      refresh-token-cookie-name: refreshToken
+      cookie-secure: true
+      cookie-http-only: true
+      cookie-same-site: lax
+      cookie-domain: localhost
+
+frontend:
+    url: http://localhost:5173
+
+    
+
+
+
