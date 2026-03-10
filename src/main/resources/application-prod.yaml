@@ -1,0 +1,65 @@
+server:
+  port: ${PORT:8000}
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  security:
+    oAuth2:
+      client:
+        registration:
+          google:
+            client-id: ${CLIENT_ID}
+            client-secret: ${CLIENT_SECRET}
+            scope:
+              - email
+              - openid
+              - profile
+
+
+supabase:
+  url: ${SUPABASE_URL}
+  service-role-key: ${SERVICE_ROLE_KEY}
+  bucket: ${SUPABASE_BUCKET}
+
+paytm:
+  merchant-id: ${PAYTM_MERCHANT_ID}
+  merchant-key: ${PAYTM_MERCHANT_KEY}
+  base-url: ${PAYTM_BASE_URL}
+
+logging:
+  level:
+    com:
+      paytm: OFF
+    paytm:
+      pg: OFF
+
+security:
+  jwt:
+    secret: ${SECRET}
+    issuer: Bill-Bridge
+    access-token-expiration: ${ACCESS_TOKEN_EXPIRATION} # 8 minutes in milliseconds
+    refresh-token-expiration: ${REFRESH_TOKEN_EXPIRATION} # 10 minutes in milliseconds
+    refresh-token-cookie-name: refreshToken
+    cookie-secure: true
+    cookie-http-only: true
+    cookie-same-site: lax
+    cookie-domain: ${COOKIE_DOMAIN}
+
+frontend:
+  url: ${FRONTEND_URL}
+
+
+
+
+
