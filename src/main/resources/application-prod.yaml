@@ -3,14 +3,23 @@ server:
 
 spring:
   datasource:
-    url: ${DB_URL}
+    url: ${DB_URL}?prepareThreshold=0
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      idle-timeout: 30000
+      max-lifetime: 600000
+      connection-timeout: 20000
   jpa:
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        default_schema: public
   security:
     oAuth2:
       client:
