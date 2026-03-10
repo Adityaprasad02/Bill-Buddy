@@ -1,0 +1,23 @@
+# Build output
+target/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Maven wrapper (downloaded inside container)
+.mvn/
+mvnw
+mvnw.cmd
+
+# Docs / misc
+HELP.md
+REQUEST
+README.md
+*.md
