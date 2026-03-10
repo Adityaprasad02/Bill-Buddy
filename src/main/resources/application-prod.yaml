@@ -10,10 +10,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-  h2:
-    console:
-      enabled: true
-      path: /h2
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
   security:
     oAuth2:
       client:
