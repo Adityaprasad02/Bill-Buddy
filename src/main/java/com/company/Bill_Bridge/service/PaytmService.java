@@ -53,9 +53,13 @@ public class PaytmService {
 
     private final RefundDetailsRepository refundDetailsRepository ;
 
-    public PaytmService(PaymentDetailsRepository paymentDetailsRepository, RefundDetailsRepository refundDetailsRepository) {
+    private final String frontendURL ;
+
+    public PaytmService(PaymentDetailsRepository paymentDetailsRepository, RefundDetailsRepository refundDetailsRepository,
+                        @Value("${frontend.url}")String frontendURL) {
         this.paymentDetailsRepository = paymentDetailsRepository;
         this.refundDetailsRepository = refundDetailsRepository;
+        this.frontendURL = frontendURL;
     }
 
 
@@ -112,7 +116,7 @@ public class PaytmService {
         body.put("mid", merchantId);
         body.put("websiteName", "WEBSTAGING");
         body.put("orderId", orderId);
-        body.put("callbackUrl", "https://localhost:8000/payment-success-ho-chuki");
+        body.put("callbackUrl", frontendURL + "/payment-success-ho-chuki");
 
         JSONObject txnAmount = new JSONObject();
         txnAmount.put("value", bill.getAmount() );
@@ -229,7 +233,7 @@ public class PaytmService {
     }
 
     private RefundResponse buildRefundDeatilsandSave(JsonNode response, PaymentDetails paymentDetails) {
-        log.info("{}" , response);
+        //log.info("{}" , response);
            ObjectNode bodyNode = (ObjectNode) response.get("body");
         String orderId = bodyNode.get("orderId") == null ? null : bodyNode.get("orderId").asString();
         String refId = bodyNode.get("refId") == null ? null : bodyNode.get("refId").asString();

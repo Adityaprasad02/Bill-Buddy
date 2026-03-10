@@ -35,6 +35,7 @@ supabase:
 paytm:
   merchant-id: tXvhzx31620803258735
   merchant-key: snZDiqGM3sEfN@Rp
+  base-url: https://securestage.paytmpayments.com
 
 logging:
     level:

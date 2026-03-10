@@ -55,7 +55,7 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
 
-        log.info("Auhenticatication : {} " , authentication.toString());
+       // log.info("Auhenticatication : {} " , authentication.toString());
 
         // get oAuthUser return by google
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
@@ -91,11 +91,11 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
 //
                          if(e.getMessage().startsWith("exist-")){
                              userId = Long.parseLong(e.getMessage().substring(6)) ;
-                             log.info("{}" , userId);
+                             //log.info("{}" , userId);
 //                             response.sendRedirect( frontendURL + "/oauth/success");
 //                             return;
                          }else{
-                             log.info("{}" , e.getMessage());
+                             //log.info("{}" , e.getMessage());
                              String errorMessage = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
                              response.sendRedirect(frontendURL + "/login?message="+errorMessage);
                              return ;
@@ -118,7 +118,7 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
 
                 var operation =  generateAccessandRefreshTokenAndSetInCookie(user2 , response) ;
 
-                log.info("TokenResponse-OAuth2 : {}" , operation.toString());
+                //log.info("TokenResponse-OAuth2 : {}" , operation.toString());
                 String redirectUrl = UriComponentsBuilder
                         .fromUriString(frontendURL + "/oauth/success")
                         .queryParam("accessToken", operation.accessToken())

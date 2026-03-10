@@ -56,7 +56,7 @@ public class FileService {
         String path =   billId  + ".pdf" ;
 
         String resultFileUpload = processUpload(billId , path ,file) ;
-        log.info("result of file upload : {} " , resultFileUpload);
+        //log.info("result of file upload : {} " , resultFileUpload);
 
         bill.setBillLocation(path);
         billRepository.save(bill) ;
@@ -132,7 +132,7 @@ public class FileService {
         var signedUrl = body.get("signedURL").toString();
 
         signedUrl = signedUrl.substring(1,signedUrl.length()-1) ;
-        log.info("SignedUrl : {} " , signedUrl );
+        // log.info("SignedUrl : {} " , signedUrl );
 
         return supabaseProjectURL + "/storage/v1" + signedUrl ;
 

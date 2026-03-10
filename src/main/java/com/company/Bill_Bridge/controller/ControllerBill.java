@@ -12,6 +12,9 @@ import com.company.Bill_Bridge.model.dtos.RequestDtos.RequestUserRegister;
 import com.company.Bill_Bridge.model.dtos.ResponseDtos.*;
 import com.company.Bill_Bridge.model.enums.Role;
 import com.company.Bill_Bridge.service.UserService;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +25,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +41,12 @@ public class ControllerBill {
 
     @Autowired
     private  UserService userService ;
+
+    @GetMapping("/")
+    public void getHealth(HttpServletRequest request , HttpServletResponse response) throws IOException {
+        PrintWriter writer = response.getWriter() ;
+        writer.println("Bill-Bridge working fine at port 8000");
+    }
 
     @PostMapping("/user/create")
     public ResponseEntity<ResponseUserRegistration> createUser(@Valid @RequestBody RequestUserRegister register){ResponseUserRegistration responseDetails = null ;try {responseDetails = userService.createUser(register);} catch (DBException e) {throw new RuntimeException(e);

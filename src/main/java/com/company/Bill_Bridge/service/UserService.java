@@ -196,7 +196,7 @@ public class UserService {
 
         var save = paymentDetailsRepository.save(paymentDetails);
 
-        log.info("Payment details : {} " , save) ;
+        //log.info("Payment details : {} " , save) ;
 
         return save;
     }

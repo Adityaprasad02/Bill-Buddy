@@ -33,19 +33,25 @@ import java.util.List;
 @EnableWebSecurity
 public class Config {
 
-     @Autowired
-     private CustomUserDetailService userDetailService ;
+     private final CustomUserDetailService userDetailService ;
 
-     @Autowired
-     private JWTFilter jwtFilter ;
+
+     private final JWTFilter jwtFilter ;
 
      private final Oauth2SuccessHandler oauth2SuccessHandler ;
      private final String frontendURL ;
 
+     private final String paytm_base_url ;
 
-    public Config(Oauth2SuccessHandler oauth2SuccessHandler,@Value("${frontend.url}")String frontendURL) {
+
+    public Config(CustomUserDetailService userDetailService,
+                  JWTFilter jwtFilter, Oauth2SuccessHandler oauth2SuccessHandler,
+                  @Value("${frontend.url}")String frontendURL,@Value("${paytm.base-url}") String paytmBaseUrl) {
+        this.userDetailService = userDetailService;
+        this.jwtFilter = jwtFilter;
         this.oauth2SuccessHandler = oauth2SuccessHandler;
         this.frontendURL = frontendURL ;
+        paytm_base_url = paytmBaseUrl;
     }
 
 
@@ -55,7 +61,7 @@ public class Config {
 
           http.csrf(AbstractHttpConfigurer::disable)
                   .authorizeHttpRequests( (request) ->
-                              request.requestMatchers("/register",
+                              request.requestMatchers("/" , "/register",
                                               "/login" , "/user/create/**" , "/index.html" ,"/h2/**","/refresh" ,"/logout",
                                               "/billbuddy/**"
                                              ).permitAll()
@@ -91,7 +97,7 @@ public class Config {
      @Bean
      public RestClient restClient (){
           return  RestClient.builder()
-                  .baseUrl("https://securestage.paytmpayments.com")
+                  .baseUrl(paytm_base_url)
                   .build() ;
      }
 
